@@ -77,7 +77,7 @@
      (loop initial list))))
 
 (define (args->conn-params arg-hash)
-;;host, hostaddr, port, dbname, user, password, connect_timeout, options, sslmode
+  ;;host, hostaddr, port, dbname, user, password, connect_timeout, options, sslmode
   `((host     . ,(hash-table-ref arg-hash "--host"))
     (port     . ,(string->number (hash-table-ref arg-hash "--port")))
     (dbname   . ,(hash-table-ref arg-hash "--database"))
@@ -91,13 +91,15 @@
 ;; Core CLI ;;
 (define [main args]
   (init-medea)
-  (let* [(db-conn (connect-to-db hard-coded-conn-str))
-         (res     (query db-conn "SELECT * FROM cats LIMIT 10"))
-         (rows    (fold (lambda (idx acc)
-                          (vector-set! acc idx (row-alist res idx))
-                          acc)
-                        (make-vector (row-count res))
-                        (iota (row-count res) 0 1)))]
+  (let* [[arg-hash (list->hash-table args)]
+         [params   (args->conn-params arg-hash)]
+         [db-conn  (connect-to-db params)]
+         (res      (query db-conn (hash-table-ref arg-hash "query")))
+         (rows     (fold (lambda (idx acc)
+                           (vector-set! acc idx (row-alist res idx))
+                           acc)
+                         (make-vector (row-count res))
+                         (iota (row-count res) 0 1)))]
 
     (write-json rows)
     (newline)
