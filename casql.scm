@@ -9,16 +9,32 @@
 ;; Postgres ;;
 (define hard-coded-conn-str "postgres://root@localhost/api-db?sslmode=disable")
 
-(define (connect-to-db conn-str)
-  (connect conn-str))
+(define (ts-parser val)
+  "For now, just pass through date-string.
+   Todo: figure out how to determine if the column
+   has a time zone or not..."
+  ;; for no timezone, should look like: "2006-01-02T15:04:05.999Z"
+  val
+  )
 
+(define (connect-to-db conn-str)
+  (let [[connection (connect conn-str)]]
+    (update-type-parsers! connection
+                          (cons `("timestamp" . ,ts-parser)
+                                (default-type-parsers)))
+    connection))
+
+;; Medea ;;
 (define (sql-null-unparser v)
   (write-json 'null))
 
-(json-unparsers (cons (cons sql-null? sql-null-unparser) (json-unparsers)))
+(define [init-medea]
+  "Update the json-unparsers to handle sql-null values."
+  (json-unparsers (cons (cons sql-null? sql-null-unparser)
+                        (json-unparsers))))
 
 (define (sql-list-unparser v)
-  (write-json ))
+  (write-json 'null))
 ;; // Postgres
 
 ;; Debug Helpers ;;
@@ -74,6 +90,7 @@
 
 ;; Core CLI ;;
 (define [main args]
+  (init-medea)
   (let* [(db-conn (connect-to-db hard-coded-conn-str))
          (res     (query db-conn "SELECT * FROM cats LIMIT 10"))
          (rows    (fold (lambda (idx acc)
