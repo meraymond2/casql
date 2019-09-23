@@ -37,6 +37,15 @@
 ;; // Debug Helpers
 
 ;; Arg Parsing ;;
+(define test-args
+  '("query" "SELECT * FROM cats"
+    "--host" "localhost"
+    "--port" "5432"
+    "--user" "root"
+    "--password" ""
+    "--database" "api-db"
+    "--sslmode" "disable"))
+
 (define list->hash-table
   (case-lambda
     ((list) (list->hash-table list (make-hash-table)))
@@ -50,6 +59,16 @@
              (loop acc tail))
            acc))
      (loop initial list))))
+
+(define (args->conn-params arg-hash)
+;;host, hostaddr, port, dbname, user, password, connect_timeout, options, sslmode
+  `((host     . ,(hash-table-ref arg-hash "--host"))
+    (port     . ,(string->number (hash-table-ref arg-hash "--port")))
+    (dbname   . ,(hash-table-ref arg-hash "--database"))
+    (user     . ,(hash-table-ref arg-hash "--user"))
+    (password . ,(hash-table-ref arg-hash "--password"))
+    (sslmode  . ,(hash-table-ref arg-hash "--sslmode"))
+    ))
 ;; // Arg parsing
 
 
@@ -64,7 +83,7 @@
                         (iota (row-count res) 0 1)))]
 
     (write-json rows)
-    (print "\n")
+    (newline)
     ))
 
 ;; Run Program ;;
