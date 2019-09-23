@@ -36,6 +36,23 @@
     (print x))))
 ;; // Debug Helpers
 
+;; Arg Parsing ;;
+(define list->hash-table
+  (case-lambda
+    ((list) (list->hash-table list (make-hash-table)))
+    ((list initial)
+     (define (loop acc remaining)
+       (if (>= (length remaining) 2)
+           (let* [[k (car remaining)]
+                  [v (cadr remaining)]
+                  [tail (cddr remaining)]]
+             (hash-table-set! acc k v)
+             (loop acc tail))
+           acc))
+     (loop initial list))))
+;; // Arg parsing
+
+
 ;; Core CLI ;;
 (define [main args]
   (let* [(db-conn (connect-to-db hard-coded-conn-str))
