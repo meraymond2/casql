@@ -11,6 +11,10 @@ import them or not? Also, do I need to install all the srfi's or do they come in
 Querying:
 `./casql query "SELECT * FROM cats ORDER BY created_at" --host localhost --port 5432 --database api-db --user root --password '' --sslmode disable | jq > resp.json`
 
+`casql save my-local-db -host localhost ...etc`
+`casql list`
+`casql delete-connection my-local-db`
+
 # Todo
 ## Next Steps
 - add default options for Postgres
