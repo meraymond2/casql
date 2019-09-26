@@ -1,9 +1,10 @@
+(import (chicken io))
 (import (chicken process-context))
 (import medea)
 (import postgresql)
 (import sql-null)
 (import srfi-1) ;; lists
-(import srfi-18)
+(import srfi-18) ;; threads
 (import args)
 
 ;; Postgres ;;
@@ -68,18 +69,41 @@
 ;; // Postgres
 
 ;; Saved Connections ;;
+(define config-path
+  "config.json")
+
+(define (load-config)
+  "The config is a JSON object, with the saved names as keys
+   and the config object as values. Medea reads it as a list
+   of lists. Each sublist has the key as its head, and the
+   config key-values as pairs for the tail. The nested objects
+   are _not_ represented as a pair (which is what I expected)."
+  (with-input-from-file config-path read-json))
+
+(define (save-config config)
+  (with-output-to-file config-path
+    (lambda () (write-json config))))
+
 (define (list-connections)
-  "connections, yada")
+  (map car (load-config)))
+
+(define test-save-args
+  '("save-connection" "some-conn" "-h" "some-host" "-d" "my_db" "-u" "Cas" "-w" "swordfishtrombone"))
 
 (define (save-connection name args)
-  (string-append "Saved connection, etc. " name " | " args))
+  (print args)
+  (let* ((conns (load-config))
+         (new-conn (cons name args))
+         (new-config (cons new-conn conns)))
+    (save-config new-config)
+    (string-append "Saved connection: " name ".")))
 
 (define (delete-connection name)
   (string-append "Deleting connection: " name))
 
 (define (load-connection name)
   (if name
-      (list (cons 'user "michael"))
+      (list (hash-table-ref (load-config) name))
       (list)))
 
 ;; // Saved Connections ;;
@@ -97,7 +121,8 @@
         (args:make-option (u user) (#:required "NAME") "user name")
         (args:make-option (w password) (#:required "PASS") "password")
         (args:make-option (m sslmode) (#:required "MODE") "ssl mode (default \"prefer\")")
-        (args:make-option (l load) (#:required "NAME") "use saved connection")
+        (args:make-option (l load) (#:required "NAME") "use saved connection"
+                          (set! arg (string->symbol arg)))
         ))
 
 (define (print-usage)
@@ -134,11 +159,11 @@
     (when (null? commands) (print-usage) (exit))
     (cond
      ((equal? (car commands) list-conn-cmd)
-      (print (list-connections)))
+      (for-each print (list-connections)))
 
      ((and (not (null? (cdr commands)))
            (equal? (car commands) save-conn-cmd))
-      (print (save-connection (cadr commands) options)))
+      (print (save-connection (string->symbol (cadr commands)) options)))
 
      ((and (not (null? (cdr commands)))
            (equal? (car commands) del-conn-cmd))
