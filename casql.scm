@@ -27,7 +27,7 @@
    (cons 'host     "localhost")
    (cons 'port     5432)
    (cons 'dbname   "")
-   (cons 'user     "postgres")
+   (cons 'user     "")
    (cons 'password "")
    (cons 'sslmode  "prefer")
    ))
@@ -43,9 +43,8 @@
 
 (define (run-query q options)
   (let* ((conn-params (alist-merge (args->conn-params options)
-                                   (if (alist-ref '--read-connection options)
-                                       (load-connection (alist-ref '--read-connection options))
-                                       default-params)))
+                                   (alist-merge (alist-ref 'load options)
+                                                default-params)))
          (db-connection (connect-to-db conn-params))
          (query-result (query db-connection q))
          (rows (fold (lambda (idx acc)
@@ -82,7 +81,8 @@
   (print "Deleting connection: " name))
 
 (define (load-connection name)
-  (list))
+  (print "using loaded conn " name)
+  (list (cons 'user "michael")))
 
 ;; // Saved Connections ;;
 
@@ -92,19 +92,33 @@
 (define del-conn-cmd  "delete-connection")
 
 (define opts
-  (list (args:make-option (q query) #:required "query to execute")
-        (args:make-option (s save) #:required "conn name")
-        (args:make-option (h host) #:required "host name")
-        (args:make-option (p port) #:required "port #"
+  (list (args:make-option (h host) #:required "database server host (default \"localhost\")"
+                          (set! arg (or arg "localhost")))
+        (args:make-option (p port) #:required "database server port (default 5432)"
                           (set! arg (string->number (or arg "5432"))))
         (args:make-option (d database) #:required "database name")
         (args:make-option (u user) #:required "user name")
-        (args:make-option (p password) #:required "password")
-        (args:make-option (sslmode) #:required "ssl mode")
+        (args:make-option (w password) #:required "password")
+        (args:make-option (m sslmode) #:required "ssl mode (default \"prefer\")")
+        (args:make-option (l load) #:required "use saved connection"
+                          (if arg
+                              (set! arg "mcihael")
+                              (list)))
         ))
 
 
 (define (print-usage)
+  (print "Usage: casql [COMMAND] [OPTIONS]...")
+  (newline)
+  (print "COMMAND may either be a SQL query, or one of:")
+  (print " " list-conn-cmd)
+  (print " " save-conn-cmd "   [NAME] [OPTIONS]...")
+  (print " " del-conn-cmd " [NAME]")
+  (newline)
+  (print "Saved connections can be used later with the --load [NAME] option.")
+  (print "Additional options are merged on top of the saved ones.")
+  (newline)
+  (print "Options:")
   (print (args:usage opts)))
 
 (define (args->conn-params options)
