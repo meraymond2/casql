@@ -43,7 +43,7 @@
 
 (define (run-query q options)
   (let* ((conn-params (alist-merge (args->conn-params options)
-                                   (alist-merge (alist-ref 'load options)
+                                   (alist-merge (load-connection (alist-ref 'load options))
                                                 default-params)))
          (db-connection (connect-to-db conn-params))
          (query-result (query db-connection q))
@@ -53,11 +53,8 @@
                      (make-vector (row-count query-result))
                      (iota (row-count query-result) 0 1)))
          )
-    (write-json rows)
-    (print " ")
     (disconnect db-connection)
-    )
-  )
+    rows))
 
 ;; Medea ;;
 (define (sql-null-unparser v)
@@ -72,17 +69,18 @@
 
 ;; Saved Connections ;;
 (define (list-connections)
-  (print "connections, yada"))
+  "connections, yada")
 
 (define (save-connection name args)
-  (print "Saved connection, etc. " name " | " args))
+  (string-append "Saved connection, etc. " name " | " args))
 
 (define (delete-connection name)
-  (print "Deleting connection: " name))
+  (string-append "Deleting connection: " name))
 
 (define (load-connection name)
-  (print "using loaded conn " name)
-  (list (cons 'user "michael")))
+  (if name
+      (list (cons 'user "michael"))
+      (list)))
 
 ;; // Saved Connections ;;
 
@@ -92,20 +90,15 @@
 (define del-conn-cmd  "delete-connection")
 
 (define opts
-  (list (args:make-option (h host) #:required "database server host (default \"localhost\")"
-                          (set! arg (or arg "localhost")))
-        (args:make-option (p port) #:required "database server port (default 5432)"
+  (list (args:make-option (h host) (#:required "HOST") "database server host (default \"localhost\")")
+        (args:make-option (p port) (#:required "PORT") "database server port (default 5432)"
                           (set! arg (string->number (or arg "5432"))))
-        (args:make-option (d database) #:required "database name")
-        (args:make-option (u user) #:required "user name")
-        (args:make-option (w password) #:required "password")
-        (args:make-option (m sslmode) #:required "ssl mode (default \"prefer\")")
-        (args:make-option (l load) #:required "use saved connection"
-                          (if arg
-                              (set! arg "mcihael")
-                              (list)))
+        (args:make-option (d database) (#:required "NAME") "database name")
+        (args:make-option (u user) (#:required "NAME") "user name")
+        (args:make-option (w password) (#:required "PASS") "password")
+        (args:make-option (m sslmode) (#:required "MODE") "ssl mode (default \"prefer\")")
+        (args:make-option (l load) (#:required "NAME") "use saved connection")
         ))
-
 
 (define (print-usage)
   (print "Usage: casql [COMMAND] [OPTIONS]...")
@@ -138,20 +131,22 @@
   (when (null? args) (print-usage) (exit))
 
   (receive (options commands) (args:parse (command-line-arguments) opts)
+    (when (null? commands) (print-usage) (exit))
     (cond
      ((equal? (car commands) list-conn-cmd)
-      (list-connections))
+      (print (list-connections)))
 
-     ((and (equal? (car commands) save-conn-cmd)
-           (not (null? (cdr commands))))
-      (save-connection (cadr commands) options))
+     ((and (not (null? (cdr commands)))
+           (equal? (car commands) save-conn-cmd))
+      (print (save-connection (cadr commands) options)))
 
-     ((and (equal? (car commands) del-conn-cmd)
-           (not (null? (cdr commands))))
-      (delete-connection (cadr commands)))
+     ((and (not (null? (cdr commands)))
+           (equal? (car commands) del-conn-cmd))
+      (print (delete-connection (cadr commands))))
 
-     ((not (null? (car commands)))
-      (run-query (car commands) options))
+     ((not (null? options))
+      (write-json (run-query (car commands) options))
+      (print " "))
 
      ('else (print-usage))
      ))
