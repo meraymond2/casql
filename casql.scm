@@ -1,14 +1,17 @@
 (import (chicken io))
+(import (chicken pathname))
 (import (chicken process-context))
 (import (chicken file))
-(import medea)
-(import postgresql)
-(import sql-null)
 (import srfi-1) ;; lists
 (import srfi-18) ;; threads
 (import args)
+(import medea)
+(import postgresql)
+(import sql-null)
 
+;;;;;;;;;;;;;;
 ;; Postgres ;;
+;;;;;;;;;;;;;;
 (define (ts-parser val)
   "For now, just pass through date-string.
    Todo: figure out how to determine if the column
@@ -20,7 +23,7 @@
 (define (connect-to-db conn-str)
   (let [[connection (connect conn-str)]]
     (update-type-parsers! connection
-                          (cons `("timestamp" . ,ts-parser)
+                          (cons (cons "timestamp" ts-parser)
                                 (default-type-parsers)))
     connection))
 
@@ -58,7 +61,9 @@
     (disconnect db-connection)
     rows))
 
+;;;;;;;;;;;
 ;; Medea ;;
+;;;;;;;;;;;
 (define (sql-null-unparser v)
   (write-json 'null))
 
@@ -67,14 +72,17 @@
   (json-unparsers (cons (cons sql-null? sql-null-unparser)
                         (json-unparsers))))
 
-;; // Postgres
-
-;; Saved Connections ;;
-(define config-path
-  (string-append
+;;;;;;;;;;;;
+;; Config ;;
+;;;;;;;;;;;;
+(define config-dir
+  (make-pathname
    (or (get-environment-variable "XDG_CONFIG_HOME")
-       (string-append (get-environment-variable "HOME") "/.config"))
-   "/casql/config.json"))
+       (make-pathname (get-environment-variable "HOME") ".config"))
+   "casql"))
+
+(define config-path
+  (make-pathname config-dir "config.json"))
 
 (define (load-config)
   (if (file-exists? config-path)
@@ -82,6 +90,8 @@
       (list)))
 
 (define (save-config config)
+  (when (not (directory-exists? config-dir))
+    (create-directory config-dir))
   (with-output-to-file config-path
     (lambda () (write-json config))))
 
@@ -90,7 +100,7 @@
 
 (define (save-connection name args)
   (let* ((conns (load-config))
-         (new-config (alist-update! name args conns)))
+         (new-config (alist-update! name (args->conn-params args) conns)))
     (save-config new-config)
     (string-append "Saved connection: " (symbol->string name) ".")))
 
@@ -98,15 +108,14 @@
   (save-config (alist-delete! name (load-config)))
   (string-append "Deleting connection: " (symbol->string name)))
 
-;; TODO
 (define (load-connection name)
   (if name
-      (list (hash-table-ref (load-config) name))
+      (alist-ref name (load-config))
       (list)))
 
-;; // Saved Connections ;;
-
+;;;;;;;;;;;;;;;;;
 ;; Arg Parsing ;;
+;;;;;;;;;;;;;;;;;
 (define list-conn-cmd "list-connections")
 (define save-conn-cmd "save-connection")
 (define del-conn-cmd  "delete-connection")
@@ -138,6 +147,7 @@
   (print (args:usage opts)))
 
 (define (args->conn-params options)
+  "Map the arguments to postgres connection params."
   (list
    (cons 'host     (alist-ref 'host options))
    (cons 'port     (alist-ref 'port options))
@@ -146,9 +156,10 @@
    (cons 'password (alist-ref 'password options))
    (cons 'sslmode  (alist-ref 'sslmode options))
    ))
-;; // Arg parsing
 
+;;;;;;;;;;;;;;
 ;; Core CLI ;;
+;;;;;;;;;;;;;;
 (define [main args]
   (init-medea)
   (when (null? args) (print-usage) (exit))
@@ -165,7 +176,7 @@
 
      ((and (not (null? (cdr commands)))
            (equal? (car commands) del-conn-cmd))
-      (print (delete-connection (cadr commands))))
+      (print (delete-connection (string->symbol (cadr commands)))))
 
      ((not (null? options))
       (write-json (run-query (car commands) options))
@@ -175,5 +186,7 @@
      ))
   )
 
+;;;;;;;;;;;;;;;;;
 ;; Run Program ;;
+;;;;;;;;;;;;;;;;;
 (main (command-line-arguments))
