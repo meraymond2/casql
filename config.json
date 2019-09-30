@@ -1,18 +1,32 @@
-(
-  (
-    (
-      another
-      (w . "swordfish")
-      (password . "swordfish")
-      (u . "mike")
-      (user . "mike")
-      (d . "my_db")
-      (database . "my_db")
-      (h . "some-host")
-      (host . "some-host")
-    )
-
-    #f
-
-  )
-)
+{
+  "new-one-what": {
+    "p": 7777,
+    "port": 7777,
+    "d": "api-db",
+    "database": "api-db",
+    "m": "disable",
+    "sslmode": "disable",
+    "u": "root",
+    "user": "root"
+  },
+  "new-one": {
+    "p": 7777,
+    "port": 7777,
+    "d": "api-db",
+    "database": "api-db",
+    "m": "disable",
+    "sslmode": "disable",
+    "u": "root",
+    "user": "root"
+  },
+  "cascat": {
+    "p": 3306,
+    "port": 3306,
+    "d": "mysql-db",
+    "database": "mysql-db",
+    "m": "disable",
+    "sslmode": "disable",
+    "u": "root",
+    "user": "root"
+  }
+}

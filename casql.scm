@@ -1,5 +1,6 @@
 (import (chicken io))
 (import (chicken process-context))
+(import (chicken file))
 (import medea)
 (import postgresql)
 (import sql-null)
@@ -12,7 +13,7 @@
   "For now, just pass through date-string.
    Todo: figure out how to determine if the column
    has a time zone or not..."
-  ;; for no timezone, should look like: "2006-01-02T15:04:05.999Z"
+  ;; for no timezone, should ideally look like: "2006-01-02T15:04:05.999Z"
   val
   )
 
@@ -70,15 +71,15 @@
 
 ;; Saved Connections ;;
 (define config-path
-  "config.json")
+  (string-append
+   (or (get-environment-variable "XDG_CONFIG_HOME")
+       (string-append (get-environment-variable "HOME") "/.config"))
+   "/casql/config.json"))
 
 (define (load-config)
-  "The config is a JSON object, with the saved names as keys
-   and the config object as values. Medea reads it as a list
-   of lists. Each sublist has the key as its head, and the
-   config key-values as pairs for the tail. The nested objects
-   are _not_ represented as a pair (which is what I expected)."
-  (with-input-from-file config-path read-json))
+  (if (file-exists? config-path)
+      (with-input-from-file config-path read-json)
+      (list)))
 
 (define (save-config config)
   (with-output-to-file config-path
@@ -87,20 +88,17 @@
 (define (list-connections)
   (map car (load-config)))
 
-(define test-save-args
-  '("save-connection" "some-conn" "-h" "some-host" "-d" "my_db" "-u" "Cas" "-w" "swordfishtrombone"))
-
 (define (save-connection name args)
-  (print args)
   (let* ((conns (load-config))
-         (new-conn (cons name args))
-         (new-config (cons new-conn conns)))
+         (new-config (alist-update! name args conns)))
     (save-config new-config)
-    (string-append "Saved connection: " name ".")))
+    (string-append "Saved connection: " (symbol->string name) ".")))
 
 (define (delete-connection name)
-  (string-append "Deleting connection: " name))
+  (save-config (alist-delete! name (load-config)))
+  (string-append "Deleting connection: " (symbol->string name)))
 
+;; TODO
 (define (load-connection name)
   (if name
       (list (hash-table-ref (load-config) name))
