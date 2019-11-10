@@ -58,13 +58,13 @@ fn build_clap_app() -> App<'static, 'static> {
 
   let query = SubCommand::with_name("query")
     .about("Execute a SQL query")
-    .arg(host.required_unless_one(&[LOAD, CSTR]))
-    .arg(user.required_unless_one(&[LOAD, CSTR]))
-    .arg(sql_impl.required_unless_one(&[LOAD, CSTR]))
-    .arg(port)
-    .arg(password)
-    .arg(load)
-    .arg(conn_string.conflicts_with_all(&[HOST, PORT, USER, PASS, IMPL, LOAD]))
+    .arg(Arg::from(&host).required_unless_one(&[LOAD, CSTR]))
+    .arg(Arg::from(&user).required_unless_one(&[LOAD, CSTR]))
+    .arg(Arg::from(&sql_impl).required_unless_one(&[LOAD, CSTR]))
+    .arg(Arg::from(&port))
+    .arg(Arg::from(&password))
+    .arg(Arg::from(&load))
+    .arg(Arg::from(&conn_string).conflicts_with_all(&[HOST, PORT, USER, PASS, IMPL, LOAD]))
     .arg(
       Arg::with_name("QUERY")
         .takes_value(true)
@@ -78,11 +78,20 @@ fn build_clap_app() -> App<'static, 'static> {
     .about("Describe a saved connection")
     .arg(Arg::from(&conn).required(true));
 
+  let save = SubCommand::with_name("save")
+    .about("Save a connection")
+    .arg(Arg::from(&host))
+    .arg(Arg::from(&user))
+    .arg(Arg::from(&sql_impl))
+    .arg(Arg::from(&port))
+    .arg(Arg::from(&password))
+    .arg(Arg::from(&conn_string).conflicts_with_all(&[HOST, PORT, USER, PASS, IMPL]))
+    .arg(Arg::from(&conn).required(true));
+
   let delete = SubCommand::with_name("delete")
     .about("Delete a saved connection")
     .arg(Arg::from(&conn).required(true));
 
-  // TODO: Save connection
   // TODO: Database name!
 
   App::new("casql")
@@ -94,7 +103,8 @@ fn build_clap_app() -> App<'static, 'static> {
     .subcommand(query.display_order(1))
     .subcommand(list.display_order(2))
     .subcommand(describe.display_order(3))
-    .subcommand(delete.display_order(4))
+    .subcommand(save.display_order(4))
+    .subcommand(delete.display_order(5))
 }
 
 pub fn do_stuff_with_args() {
