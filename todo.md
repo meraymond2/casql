@@ -1,65 +1,33 @@
-0. Data Structure — First Guess
+## Next
+Next step is to finish the argument parsing into data for the app to use.
+
+- Make a type for the sub-cmds
+  -main should be able to dispatch based on the subcmd
+  -args should know how to parse the args based on the sub-cmd
+
+- Write the parsing logic for the args to turn them into various structs
+
+- Make a port type so that they can't type in strings for the port
+
+I think it's ok for the args function to return the partial spec, most of the
+cmds will have 2–3 phases, 1. get args, 2. interact with file system, 3. connect
+to database. The list/save/describe/delete will only do the first two, while
+query will do all 3. But I think it makes sense to keep the FS as the second
+step for all subcmds, rather than try to load the extra config as part of the
+arg parsing.
+
+So the return type of get_args will be
 ```rust
-enum SQLType {
-  mysql,
-  postgres,
+enum SubCmd {
+  Query(PartialConnSpec, Option<String>), // opt is load arg
+  List,
+  Describe(String), // or &str? who knows
+  Save(PartialConnSpec, String),
+  Delete(String),
 }
-
-struct ConnOpts {
-  host: String, // I don't think this can be more specific
-  password: Option<String>,
-  port: usize, // This can possibly be more specific
-  sql_type: SQLType,
-  user: String,
-}
-
-enum ConnectionSpec {
-  Opts(ConnOpts)
-  ConnString(String)
-}
-
-// The input and saved connection will both be Partial, and I'll attempt to
-// merge them into a ConnOpts. The Conn string won't be able to be partial.
-struct PartialConnOpts {
-  host: Option<String>,
-  password: Option<String>,
-  port: Option<usize>,
-  sql_type: Option<SQLType>,
-  user: Option<String>,
-}
-
 ```
-1. Set up clap
 
-https://www.youtube.com/watch?v=7z9L6NOjbqM&list=PLza5oFLQGTl2Z5T8g1pRkIynR3E0_pc7U
+## After that
+After that the app should have all of the input it needs to do various things.
 
-Desired API:
-```
-casql save-connection my-pg-conn -h $1 -u $2 -p $3 -d $4 -s postgres
-casql save-connection my-pg-conn --conn postgres://user:pass@host/dbname
-
-casql delete-connection my-pg-conn
-
-casql "SELECT count(*) FROM cats" -h $1 -u $2 -p $3 -d $4 -s postgres
-casql "SELECT count(*) FROM cats" --conn postgres://user:pass@host/dbname
-casql "SELECT count(*) FROM cats" -l my-pg-conn
-casql "SELECT count(*) FROM cats" -l my-pg-conn -p $1
-
-casql list-connections
-casql describe-connection my-pg-conn
-
-casql --help
-```
-Undefined behaviour:
-Does the order of the commands and command arguments matter?
-
-I'm hoping that clap can let me do either/or with the flags.
-
-2. Flow
-I don't think I'll be able to use Clap for all of the input validation, because
-if building up the connection information is in two steps (args + config), I
-won't know if I have a complete config until I've merged them.
-
-My main hopes for Clap are that it can handle the option-paths. I'd prefer not
-to allow the user to do -conn something -h something, and I don't want to handle
-that manually.
+Then I can start the config/file-system manipulation.

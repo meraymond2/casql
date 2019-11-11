@@ -1,4 +1,5 @@
 use clap::{crate_authors, crate_version, App, Arg, SubCommand};
+mod conn;
 
 const HOST: &str = "HOST";
 const PORT: &str = "PORT";
@@ -8,9 +9,6 @@ const IMPL: &str = "IMPL";
 const LOAD: &str = "LOAD";
 const CSTR: &str = "CONN_STRING";
 const CONN: &str = "CONN";
-
-const POSTGRESQL: &str = "postgres";
-const MYSQL: &str = "mysql";
 
 // Todo: This doesn't need to be static, figure out how to set the life-times properly.
 fn build_clap_app() -> App<'static, 'static> {
@@ -25,8 +23,8 @@ fn build_clap_app() -> App<'static, 'static> {
     .help("Database port")
     .takes_value(true)
     .default_value_ifs(&[
-      (IMPL, Some(POSTGRESQL), "5432"),
-      (IMPL, Some(MYSQL), "3306"),
+      (IMPL, Some(conn::POSTGRESQL), "5432"),
+      (IMPL, Some(conn::MYSQL), "3306"),
     ]);
   let user = Arg::with_name(USER)
     .short("u")
@@ -43,7 +41,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .long("implementation")
     .help("SQL implementation")
     .takes_value(true)
-    .possible_values(&[POSTGRESQL, MYSQL]);
+    .possible_values(&[conn::POSTGRESQL, conn::MYSQL]);
   let load = Arg::with_name(LOAD)
     .short("l")
     .long("load")
