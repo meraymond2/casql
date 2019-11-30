@@ -1,8 +1,9 @@
 use std::str::FromStr;
 
+// TODO, why can't I call this from main??
+
 // TODO: this is in the wrong place, this is just a temporary solution in order
 // to be able to access it from args
-
 pub const POSTGRESQL: &str = "postgres";
 pub const MYSQL: &str = "mysql";
 

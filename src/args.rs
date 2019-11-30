@@ -1,14 +1,14 @@
-use clap::{crate_authors, crate_version, App, Arg, SubCommand};
+use clap::{crate_authors, crate_version, App, Arg, SubCommand, ArgMatches};
 mod conn;
 
-const HOST: &str = "HOST";
-const PORT: &str = "PORT";
-const USER: &str = "USER";
-const PASS: &str = "PWD";
-const IMPL: &str = "IMPL";
-const LOAD: &str = "LOAD";
-const CSTR: &str = "CONN_STRING";
-const CONN: &str = "CONN";
+pub const HOST: &str = "HOST";
+pub const PORT: &str = "PORT";
+pub const USER: &str = "USER";
+pub const PASS: &str = "PWD";
+pub const IMPL: &str = "IMPL";
+pub const LOAD: &str = "LOAD";
+pub const CSTR: &str = "CONN_STRING";
+pub const CONN: &str = "CONN";
 
 // Todo: This doesn't need to be static, figure out how to set the life-times properly.
 fn build_clap_app() -> App<'static, 'static> {
@@ -105,8 +105,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .subcommand(delete.display_order(5))
 }
 
-pub fn do_stuff_with_args() {
+pub fn get_args() -> ArgMatches<'static> {
   let app = build_clap_app();
-  let matches = app.get_matches();
-  println!("{:?}", matches);
+  app.get_matches()
 }

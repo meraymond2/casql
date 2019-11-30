@@ -11,3 +11,5 @@ Business/domain logic goes in lib.rs, binary logic (mostly args) goes with the m
 I think this means that it's equivalent to wrapping it all in a `mod file_name {...}`.
 
 Modules might be more useful for large applications, and for libraries. You can use `mod` to rearrange code, so you can organise your lib any way you want, without needing it to be identical to your file structure. For a simple binary, just pulling in the other files with `mod other_file;` is probably enough.
+
+All of the _module declarations_ go in the main file, and if you need to use them in other files, you can use `use crate::some_mod::MyStruct`.
