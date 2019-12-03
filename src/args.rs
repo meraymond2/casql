@@ -1,10 +1,11 @@
-use clap::{crate_authors, crate_version, App, Arg, SubCommand, ArgMatches};
+use clap::{crate_authors, crate_version, App, Arg, ArgMatches, SubCommand};
 mod conn;
 
 pub const HOST: &str = "HOST";
 pub const PORT: &str = "PORT";
 pub const USER: &str = "USER";
 pub const PASS: &str = "PWD";
+pub const DATA: &str = "DATA";
 pub const IMPL: &str = "IMPL";
 pub const LOAD: &str = "LOAD";
 pub const CSTR: &str = "CONN_STRING";
@@ -36,6 +37,11 @@ fn build_clap_app() -> App<'static, 'static> {
     .long("password")
     .help("Database user’s password")
     .takes_value(true);
+  let database = Arg::with_name(DATA)
+    .short("d")
+    .long("database")
+    .help("Database name")
+    .takes_value(true);
   let sql_impl = Arg::with_name(IMPL)
     .short("i")
     .long("implementation")
@@ -61,6 +67,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .arg(Arg::from(&sql_impl).required_unless_one(&[LOAD, CSTR]))
     .arg(Arg::from(&port))
     .arg(Arg::from(&password))
+    .arg(Arg::from(&database))
     .arg(Arg::from(&load))
     .arg(Arg::from(&conn_string).conflicts_with_all(&[HOST, PORT, USER, PASS, IMPL, LOAD]))
     .arg(
@@ -82,6 +89,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .arg(Arg::from(&user))
     .arg(Arg::from(&sql_impl))
     .arg(Arg::from(&port))
+    .arg(Arg::from(&database))
     .arg(Arg::from(&password))
     .arg(Arg::from(&conn_string).conflicts_with_all(&[HOST, PORT, USER, PASS, IMPL]))
     .arg(Arg::from(&conn).required(true));

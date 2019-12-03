@@ -11,6 +11,7 @@ fn main() {
         ("query", Some(sub_m)) => {
             let host = sub_m.value_of(args::HOST);
             let password = sub_m.value_of(args::PASS);
+            let database = sub_m.value_of(args::DATA);
             let port = match sub_m.value_of(args::PORT).map(|s| s.parse::<u16>()) {
                 Some(Ok(u16)) => Some(u16),
                 None => None,
@@ -21,10 +22,11 @@ fn main() {
 
             let query = String::from(sub_m.value_of("QUERY").unwrap()); // todo, handle
 
-            let conn_opts = match (host, port, sql_impl, user) {
-                (Some(host), Some(port), Some(sql_impl), Some(user)) => ConnOpts {
+            let conn_opts = match (host, port, database, sql_impl, user) {
+                (Some(host), Some(port), Some(database), Some(sql_impl), Some(user)) => ConnOpts {
                     host: String::from(host),
                     password: password.map(|s| String::from(s)),
+                    database: String::from(database),
                     port: port,
                     sql_impl: String::from(sql_impl),
                     user: String::from(user),

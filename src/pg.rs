@@ -22,7 +22,7 @@ pub fn run_query(query: String, conn_opts: ConnOpts) {
   let params = ConnectParams::builder()
     .user(&conn_opts.user, conn_opts.password.as_deref())
     .port(conn_opts.port)
-    .database("api-db")
+    .database(&conn_opts.database)
     .build(Host::Tcp(conn_opts.host));
 
   let conn = Connection::connect(params, TlsMode::None).unwrap();
