@@ -39,61 +39,67 @@ impl Serialize for CasableValue {
 
 impl FromSql for CasableValue {
   fn from_sql(ty: &Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
-    let val = match *ty {
-      types::UUID => {
+    let val = match ty {
+      &types::UUID => {
         let x: uuid::Uuid = FromSql::from_sql(ty, raw)?;
         CasableValue::CasUUID(x.to_string())
       }
-      types::TEXT => {
+      &types::TEXT => {
         let x: String = FromSql::from_sql(ty, raw)?;
         CasableValue::CasString(x)
       }
-      types::VARCHAR => {
+      &types::VARCHAR => {
         let x: String = FromSql::from_sql(ty, raw)?;
         CasableValue::CasString(x)
       }
-      types::TIMESTAMP => {
+      &types::TIMESTAMP => {
         let x: DateTime<Utc> = FromSql::from_sql(ty, raw)?;
         CasableValue::CasUtcDate(x)
       }
-      types::TIMESTAMPTZ => {
+      &types::TIMESTAMPTZ => {
         let x: DateTime<Local> = FromSql::from_sql(ty, raw)?;
         CasableValue::CasLocalDate(x)
       }
-      types::CHAR => {
+      &types::CHAR => {
         let x: i8 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasInt(x.into())
       }
-      types::INT2 => {
+      &types::INT2 => {
         let x: i16 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasInt(x.into())
       }
-      types::INT4 => {
+      &types::INT4 => {
         let x: i32 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasInt(x.into())
       }
-      types::INT8 => {
+      &types::INT8 => {
         let x: i64 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasInt(x)
       }
-      types::FLOAT4 => {
+      &types::FLOAT4 => {
         let val: f32 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasFloat(val.into())
       }
-      types::FLOAT8 => {
+      &types::FLOAT8 => {
         let val: f64 = FromSql::from_sql(ty, raw)?;
         CasableValue::CasFloat(val)
       }
-      types::BOOL => {
+      &types::BOOL => {
         let val: bool = FromSql::from_sql(ty, raw)?;
         CasableValue::CasBool(val)
       }
-      types::JSON => {
+      &types::JSON | &types::JSONB => {
         let val: serde_json::Value = FromSql::from_sql(ty, raw)?;
         CasableValue::CasJson(val)
       }
-      _ => {
-        println!("Unrecognised type: {:?}", *ty);
+      other => {
+        // This gets me the vals, and I can get the oid as well. I think I would need
+        // to get the matching value from another table.
+        // match other.kind() {
+        //   postgres::types::Kind::Enum(vals) => println!("Hey, an enum {:?}", vals),
+        //   _ => println!("???, who knows"),
+        // }
+        eprintln!("Unrecognised type: {:?}", *ty);
         CasableValue::CasUnknown
       }
     };
