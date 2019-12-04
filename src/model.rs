@@ -1,4 +1,6 @@
-#[derive(Debug)]
+use serde_derive::Serialize;
+
+#[derive(Debug, Serialize)]
 pub struct ConnOpts {
     pub host: String,
     pub password: Option<String>,
