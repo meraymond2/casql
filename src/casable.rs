@@ -2,15 +2,17 @@ use postgres::types;
 use postgres::types::{FromSql, Type};
 use serde::ser::{Serialize, Serializer};
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Utc, Local};
 #[derive(Clone, Debug)]
 pub enum CasableValue {
   CasString(String),
   CasUUID(String),
   CasBool(bool),
   CasUtcDate(DateTime<Utc>),
+  CasLocalDate(DateTime<Local>),
   CasInt(i64),
   CasFloat(f64),
+  CasJson(serde_json::Value),
   CasNull,
   CasUnknown,
 }
@@ -28,6 +30,8 @@ impl Serialize for CasableValue {
       CasableValue::CasInt(n) => serializer.serialize_i64(*n),
       CasableValue::CasFloat(n) => serializer.serialize_f64(*n),
       CasableValue::CasUtcDate(date) => serializer.serialize_str(&date.to_string()),
+      CasableValue::CasLocalDate(date) => serializer.serialize_str(&date.to_string()),
+      CasableValue::CasJson(json) => serializer.serialize_str(&json.to_string()),
       CasableValue::CasUnknown => serializer.serialize_str("????"),
     }
   }
@@ -44,9 +48,17 @@ impl FromSql for CasableValue {
         let x: String = FromSql::from_sql(ty, raw)?;
         CasableValue::CasString(x)
       }
+      types::VARCHAR => {
+        let x: String = FromSql::from_sql(ty, raw)?;
+        CasableValue::CasString(x)
+      }
       types::TIMESTAMP => {
         let x: DateTime<Utc> = FromSql::from_sql(ty, raw)?;
         CasableValue::CasUtcDate(x)
+      }
+      types::TIMESTAMPTZ => {
+        let x: DateTime<Local> = FromSql::from_sql(ty, raw)?;
+        CasableValue::CasLocalDate(x)
       }
       types::CHAR => {
         let x: i8 = FromSql::from_sql(ty, raw)?;
@@ -75,6 +87,10 @@ impl FromSql for CasableValue {
       types::BOOL => {
         let val: bool = FromSql::from_sql(ty, raw)?;
         CasableValue::CasBool(val)
+      }
+      types::JSON => {
+        let val: serde_json::Value = FromSql::from_sql(ty, raw)?;
+        CasableValue::CasJson(val)
       }
       _ => {
         println!("Unrecognised type: {:?}", *ty);
