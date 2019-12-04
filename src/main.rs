@@ -1,5 +1,6 @@
 mod args;
 mod casable;
+mod config;
 mod model;
 mod pg;
 
@@ -34,7 +35,15 @@ fn main() {
                 _ => panic!("Incomplete args."),
             };
 
-            pg::run_query(query, conn_opts);
+            let mut table = std::collections::HashMap::new();
+            table.insert(String::from("Cascat!"), &conn_opts);
+            table.insert(String::from("Lunabee!"), &conn_opts);
+
+            let toml = toml::to_string(&table).unwrap();
+
+            // println!("{}", toml::to_string_pretty(&foo).unwrap());
+            println!("{:?}", toml);
+            // pg::run_query(query, conn_opts);
         }
         _ => println!("Unimplemented..."),
     }
