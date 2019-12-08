@@ -98,8 +98,6 @@ fn build_clap_app() -> App<'static, 'static> {
     .about("Delete a saved connection")
     .arg(Arg::from(&conn).required(true));
 
-  // TODO: Database name!
-
   App::new("casql")
     .author(crate_authors!())
     .version(crate_version!())
