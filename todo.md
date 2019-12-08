@@ -1,33 +1,17 @@
-## Next
-Next step is to finish the argument parsing into data for the app to use.
+1. Investigate the MySQL integration, and get a working type or two. This should be done before looking at refactoring the query logic.
 
-- Make a type for the sub-cmds
-  -main should be able to dispatch based on the subcmd
-  -args should know how to parse the args based on the sub-cmd
+2. For now, I'm just going to clone all values everywhere. When everything is working, go back and use proper lifetimes.
 
-- Write the parsing logic for the args to turn them into various structs
+3. For now, using `expect()` everywhere. Later, handle everything as Results.
 
-- Make a port type so that they can't type in strings for the port
+4. I don't know if there is a way to do the PG types without matching on everything possible. It would be nice if I could reuse their existing logic for that though.
 
-I think it's ok for the args function to return the partial spec, most of the
-cmds will have 2–3 phases, 1. get args, 2. interact with file system, 3. connect
-to database. The list/save/describe/delete will only do the first two, while
-query will do all 3. But I think it makes sense to keep the FS as the second
-step for all subcmds, rather than try to load the extra config as part of the
-arg parsing.
+5. Change the usage printing to include optional arguments (as optional). I don't like that it skips the optional ones entirely.
 
-So the return type of get_args will be
-```rust
-enum SubCmd {
-  Query(PartialConnSpec, Option<String>), // opt is load arg
-  List,
-  Describe(String), // or &str? who knows
-  Save(PartialConnSpec, String),
-  Delete(String),
-}
-```
+6. Handle loading partial opts from the file while querying, and combining them with the args.
 
-## After that
-After that the app should have all of the input it needs to do various things.
+7. Handle using/saving connection strings.
 
-Then I can start the config/file-system manipulation.
+8. Tighten up any types that can be.
+
+9. Handle closing database connections. Especially on SIGINT.
