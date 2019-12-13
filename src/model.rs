@@ -18,9 +18,9 @@ impl From<&ArgMatches<'_>> for PartialConnOpts {
     let password = matches.value_of(args::PASS);
     let database = matches.value_of(args::DATA);
     let port = match matches.value_of(args::PORT).map(|s| s.parse::<u16>()) {
-        Some(Ok(u16)) => Some(u16),
-        None => None,
-        Some(Err(_)) => panic!("Port must be a number."), // todo, handle better, preferably earlier.
+      Some(Ok(u16)) => Some(u16),
+      None => None,
+      Some(Err(_)) => panic!("Port must be a number."), // todo, handle better, preferably earlier.
     };
     let sql_impl = matches.value_of(args::IMPL);
     let user = matches.value_of(args::USER);
@@ -46,7 +46,7 @@ pub struct ConnOpts {
   pub user: String,
 }
 
-// enum ConnectionSpec {
-//   Opts(ConnOpts),
-//   Str(String),
-// }
+pub enum ConnectionSpec {
+  Opts(ConnOpts),
+  Str(String),
+}
