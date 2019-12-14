@@ -92,7 +92,7 @@ impl FromSql for CasableValue {
         let val: serde_json::Value = FromSql::from_sql(ty, raw)?;
         CasableValue::CasJson(val)
       }
-      other => {
+      _other => {
         // This gets me the vals, and I can get the oid as well. I think I would need
         // to get the matching value from another table.
         // match other.kind() {

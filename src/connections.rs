@@ -56,6 +56,14 @@ pub fn describe(name: String) {
   }
 }
 
+pub fn load(name: String) -> PartialConnOpts {
+  let mut connection_map = read_conns();
+  match connection_map.remove(&name) { // is there a better way to get the owned value?
+    Some(connection) => connection,
+    None => panic!("Connection not found."),
+  }
+}
+
 pub fn delete(name: String) {
   let mut connection_map = read_conns();
   match connection_map.remove(&name) {

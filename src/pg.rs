@@ -31,7 +31,13 @@ pub fn run_query(query: String, conn_spec: ConnectionSpec) {
     ConnectionSpec::Str(conn_string) => Connection::connect(conn_string, TlsMode::None).unwrap(),
   };
 
-  let res = conn.query(&query, &[]).unwrap();
+  let res = match conn.query(&query, &[]) {
+    Ok(result) => result,
+    Err(e) => {
+      eprintln!("Ach! {:?}", e);
+      panic!("Out of cheese error.");
+    }
+  };
 
   let mut returns: Vec<std::collections::HashMap<String, CasableValue>> = Vec::new();
   for row in res.into_iter() {

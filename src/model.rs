@@ -12,6 +12,19 @@ pub struct PartialConnOpts {
   pub user: Option<String>,
 }
 
+impl PartialConnOpts {
+  pub fn merge(self, overlay: PartialConnOpts) -> PartialConnOpts {
+    PartialConnOpts {
+      host: self.host.or(overlay.host),
+      password: self.password.or(overlay.password),
+      database: self.database.or(overlay.database),
+      port: self.port.or(overlay.port),
+      sql_impl: self.sql_impl.or(overlay.sql_impl),
+      user: self.user.or(overlay.user)
+    }
+  }
+}
+
 impl From<&ArgMatches<'_>> for PartialConnOpts {
   fn from(matches: &ArgMatches) -> Self {
     let host = matches.value_of(args::HOST);
