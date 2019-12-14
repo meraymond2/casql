@@ -44,7 +44,12 @@ fn main() {
                         sql_impl: String::from(sql_impl),
                         user: String::from(user),
                     }),
-                    _ => panic!("Incomplete args."),
+                    _ => {
+                        // TODO: can I get clap to print out the missing valus
+                        // in the same way it prints out missing args?
+                        eprintln!("Incomplete args.");
+                        std::process::exit(1);
+                    },
                 }
             };
 
