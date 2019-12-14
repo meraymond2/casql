@@ -1,7 +1,7 @@
 mod args;
 mod casable;
-mod config;
 mod connections;
+mod enums;
 mod model;
 mod pg;
 
@@ -37,12 +37,12 @@ fn main() {
                         user: Some(user),
                         password,
                     } => model::ConnectionSpec::Opts(ConnOpts {
-                        host: host,
-                        password: password.map(|s| String::from(s)),
-                        database: String::from(database),
-                        port: port,
-                        sql_impl: String::from(sql_impl),
-                        user: String::from(user),
+                        host,
+                        password: password.map(String::from),
+                        database,
+                        port,
+                        sql_impl,
+                        user,
                     }),
                     _ => {
                         // TODO: can I get clap to print out the missing valus

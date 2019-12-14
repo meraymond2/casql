@@ -44,7 +44,7 @@ pub fn run_query(query: String, conn_spec: ConnectionSpec) {
     let count = row.len();
     let names: Vec<String> = row
       .columns()
-      .into_iter()
+      .iter()
       .map(|col| String::from(col.name()))
       .collect();
     let mut thing: std::collections::HashMap<String, CasableValue> =

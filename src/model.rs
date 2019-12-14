@@ -39,12 +39,12 @@ impl From<&ArgMatches<'_>> for PartialConnOpts {
     let user = matches.value_of(args::USER);
 
     PartialConnOpts {
-      host: host.map(|s| String::from(s)),
-      password: password.map(|s| String::from(s)),
-      database: database.map(|s| String::from(s)),
-      port: port,
-      sql_impl: sql_impl.map(|s| String::from(s)),
-      user: user.map(|s| String::from(s)),
+      host: host.map(String::from),
+      password: password.map(String::from),
+      database: database.map(String::from),
+      port,
+      sql_impl: sql_impl.map(String::from),
+      user: user.map(String::from),
     }
   }
 }
