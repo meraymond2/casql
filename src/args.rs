@@ -1,5 +1,5 @@
 use clap::{crate_authors, crate_version, App, Arg, ArgMatches, SubCommand};
-mod conn;
+use crate::enums::{MYSQL, POSTGRESQL};
 
 pub const HOST: &str = "HOST";
 pub const PORT: &str = "PORT";
@@ -11,8 +11,7 @@ pub const LOAD: &str = "LOAD";
 pub const CSTR: &str = "CONN_STRING";
 pub const CONN: &str = "CONN";
 
-// Todo: This doesn't need to be static, figure out how to set the life-times properly.
-fn build_clap_app() -> App<'static, 'static> {
+fn build_clap_app<'a>() -> App<'a, 'a> {
   let host = Arg::with_name(HOST)
     .short("h")
     .long("host")
@@ -24,8 +23,8 @@ fn build_clap_app() -> App<'static, 'static> {
     .help("Database port")
     .takes_value(true)
     .default_value_ifs(&[
-      (IMPL, Some(conn::POSTGRESQL), "5432"),
-      (IMPL, Some(conn::MYSQL), "3306"),
+      (IMPL, Some(POSTGRESQL), "5432"),
+      (IMPL, Some(MYSQL), "3306"),
     ]);
   let user = Arg::with_name(USER)
     .short("u")
@@ -47,7 +46,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .long("implementation")
     .help("SQL implementation")
     .takes_value(true)
-    .possible_values(&[conn::POSTGRESQL, conn::MYSQL]);
+    .possible_values(&[POSTGRESQL, MYSQL]);
   let load = Arg::with_name(LOAD)
     .short("l")
     .long("load")
@@ -111,7 +110,7 @@ fn build_clap_app() -> App<'static, 'static> {
     .subcommand(delete.display_order(5))
 }
 
-pub fn get_args() -> ArgMatches<'static> {
+pub fn get_args<'a>() -> ArgMatches<'a> {
   let app = build_clap_app();
   app.get_matches()
 }
