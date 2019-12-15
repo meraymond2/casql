@@ -13,7 +13,7 @@ fn main() {
         ("query", Some(sub_m)) => {
             let query = String::from(sub_m.value_of("QUERY").expect("Unreachable."));
             let loaded_opts = if let Some(loaded_name) = sub_m.value_of(args::LOAD) {
-                connections::load(loaded_name.to_owned())
+                connections::load(loaded_name)
             } else {
                 PartialConnOpts {
                     host: None,
@@ -49,27 +49,30 @@ fn main() {
                         // in the same way it prints out missing args?
                         eprintln!("Incomplete args.");
                         std::process::exit(1);
-                    },
+                    }
                 }
             };
 
             pg::run_query(query, conn_opts);
         }
         ("save", Some(sub_cmd)) => {
-            let opts = PartialConnOpts::from(sub_cmd);
-            let name = String::from(sub_cmd.value_of("CONN").unwrap()); // todo, handle
-            connections::save(name, opts);
+            if let Some(name) = sub_cmd.value_of("CONN") {
+                let opts = PartialConnOpts::from(sub_cmd);
+                connections::save(name, opts);
+            }
         }
         ("list", _) => {
             connections::list();
         }
         ("describe", Some(sub_cmd)) => {
-            let name = String::from(sub_cmd.value_of("CONN").unwrap());
-            connections::describe(name);
+            if let Some(name) = sub_cmd.value_of("CONN") {
+                connections::describe(name);
+            }
         }
         ("delete", Some(sub_cmd)) => {
-            let name = String::from(sub_cmd.value_of("CONN").unwrap());
-            connections::delete(name);
+            if let Some(name) = sub_cmd.value_of("CONN") {
+                connections::delete(name);
+            }
         }
         _ => {} // unreachable
     }
