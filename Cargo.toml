@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 chrono = "0.4"
-clap = "2.33.0"
 directories = "2.0.2"
 postgres = { version = "0.15.2", features = ["with-chrono", "with-uuid", "with-serde_json"] }
 serde = "1.0.103"
@@ -16,3 +15,8 @@ serde_json = "1.0.42"
 serde_derive = "1.0.103"
 toml = "0.5.5"
 uuid = "0.5"
+
+[dependencies.clap]
+clap = "2.33.0"
+default-features = false
+features = [ "suggestions", "vec_map" ]

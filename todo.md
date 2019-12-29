@@ -8,9 +8,9 @@
 
 5. Change the usage printing to include optional arguments (as optional). I don't like that it skips the optional ones entirely.
 
-6. Handle loading partial opts from the file while querying, and combining them with the args.
+√ 6. Handle loading partial opts from the file while querying, and combining them with the args.
 
-7. Handle using/saving connection strings.
+× 7. Handle using/saving connection strings.
 
 8. Tighten up any types that can be.
 

@@ -2,9 +2,11 @@ mod args;
 mod casable;
 mod connections;
 mod enums;
+mod errors;
 mod model;
 mod pg;
 
+use errors::CasErr;
 use model::{ConnOpts, PartialConnOpts};
 
 fn main() {
@@ -29,25 +31,9 @@ fn main() {
             } else {
                 let arg_opts = PartialConnOpts::from(sub_m);
                 match loaded_opts.merge(arg_opts) {
-                    PartialConnOpts {
-                        host: Some(host),
-                        port: Some(port),
-                        database: Some(database),
-                        sql_impl: Some(sql_impl),
-                        user: Some(user),
-                        password,
-                    } => model::ConnectionSpec::Opts(ConnOpts {
-                        host,
-                        password: password.map(String::from),
-                        database,
-                        port,
-                        sql_impl,
-                        user,
-                    }),
-                    _ => {
-                        // TODO: can I get clap to print out the missing valus
-                        // in the same way it prints out missing args?
-                        eprintln!("Incomplete args.");
+                    Ok(conn_opts) => conn_opts,
+                    Err(incomplete_args_err) => {
+                        eprintln!("{}", incomplete_args_err);
                         std::process::exit(1);
                     }
                 }
