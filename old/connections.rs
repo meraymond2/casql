@@ -1,4 +1,4 @@
-use crate::args::PartialConnOpts;
+use crate::model::PartialConnOpts;
 
 use directories::ProjectDirs;
 use std::collections::HashMap;

@@ -17,6 +17,6 @@ toml = "0.5.5"
 uuid = "0.5"
 
 [dependencies.clap]
-clap = "2.33.0"
+version = "2.33.0"
 default-features = false
 features = [ "suggestions", "vec_map" ]
