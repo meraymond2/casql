@@ -1,4 +1,4 @@
-use crate::sql_enum::SQLImpl;
+use crate::sql_enum::{SQLImpl, POSTGRESQL, MYSQL};
 use clap::Clap;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
@@ -8,7 +8,10 @@ pub struct PartialConnOpts {
     #[clap(name = "HOST", long = "host", short = "H", help = "Database host")]
     host: Option<String>,
 
-    #[clap(name = "PORT", long = "port", short = "p", help = "Database port")]
+    #[clap(name = "PORT", long = "port", short = "p", help = "Database port", raw(default_value_ifs = r#"&[
+        ("SQL_IMPL", Some(POSTGRESQL), "5432"),
+        ("SQL_IMPL", Some(MYSQL), "3306"),
+    ]"#))]
     port: Option<u16>,
 
     #[clap(name = "USER", long = "user", short = "u", help = "Database user")]

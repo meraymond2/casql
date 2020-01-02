@@ -3,8 +3,8 @@ use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::str::FromStr;
 
-const POSTGRESQL: &str = "postgres";
-const MYSQL: &str = "mysql";
+pub const POSTGRESQL: &str = "postgres";
+pub const MYSQL: &str = "mysql";
 
 #[derive(Debug)]
 pub enum SQLImpl {
