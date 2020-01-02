@@ -7,6 +7,7 @@ use std::fs::OpenOptions;
 use std::fs::{DirBuilder, File};
 use std::io::prelude::*;
 use std::io::ErrorKind;
+use std::io::{self, Write};
 use std::path::Path;
 
 const FILENAME: &str = "connections.toml";
@@ -32,14 +33,14 @@ fn read_conns() -> Result<HashMap<String, PartialConnOpts>, CasErr> {
     Ok(f) => f,
     Err(ref e) if e.kind() == ErrorKind::NotFound => match initialise(dirs.config_dir()) {
       Ok(f) => f,
-      Err(e) => return Err(CasErr::from(e)),
+      Err(e) => return Err(e.into()),
     },
     Err(ref e) if e.kind() == ErrorKind::PermissionDenied => return Err(CasErr::FilePermissions),
-    Err(e) => return Err(CasErr::from(e)),
+    Err(e) => return Err(e.into()),
   };
   let mut contents = String::new();
 
-  file.read_to_string(&mut contents).unwrap();
+  file.read_to_string(&mut contents).map_err(CasErr::from)?;
   toml::from_str(&contents).map_err(|e| CasErr::InvalidConfigToml(format!("{}", e)))
 }
 
@@ -67,27 +68,28 @@ fn read_conns() -> Result<HashMap<String, PartialConnOpts>, CasErr> {
 //   println!("Connection {} saved.", name);
 // }
 
-pub fn list() {
-  match read_conns() {
-    Ok(connection_map) => {
-      let keys = connection_map.keys();
-
-      println!("Connections:");
-      for k in keys {
-        println!("\t{}", k);
-      }
-    }
-    Err(e) => eprintln!("{}", e),
-  }
+pub fn list() -> Result<(), CasErr> {
+  let connection_map = read_conns()?;
+  let keys = connection_map.keys();
+  let stdout = io::stdout();
+  let mut handle = stdout.lock();
+  writeln!(handle, "Connections")?;
+  keys
+    .into_iter()
+    .fold(Ok(()), |acc, k| acc.and(writeln!(handle, "\t{}", k)))
+    .map_err(CasErr::from)
 }
 
-// pub fn describe(name: &str) {
-//   let connection_map = read_conns();
-//   match connection_map.get(name) {
-//     Some(connection) => println!("Connection: {:?}", connection),
-//     None => println!("Connection not found."),
-//   }
-// }
+pub fn describe(name: String) -> Result<(), CasErr> {
+  let connection_map = read_conns()?;
+  match connection_map.get(&name) {
+    Some(connection) => {
+      println!("Connection: {:?}", connection);
+      Ok(())
+    }
+    None => Err(CasErr::ConnNotFound),
+  }
+}
 
 // pub fn load(name: &str) -> PartialConnOpts {
 //   let mut connection_map = read_conns();

@@ -8,6 +8,7 @@ use std::io::ErrorKind;
 pub enum CasErr {
   // IncompleteArgs(PartialConnOpts),
   // InvalidPort,
+  ConnNotFound,
   FilePermissions,
   InvalidConfigToml(String),
   NoHomeDir,
@@ -58,6 +59,7 @@ impl fmt::Display for CasErr {
       //   write!(f, "error: The following required arguments were not provided:\n{}{}{}{}{}\nFor more information try --help", host, database, port, sql_impl, user)
       // }
       // CasErr::InvalidPort => write!(f, "error: That is not a valid port number"),
+      CasErr::ConnNotFound => write!(f, "error: That connection was not found"),
       CasErr::FilePermissions => write!(
         f,
         "error: casql does not have permission to write to its config files"
