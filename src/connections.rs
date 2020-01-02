@@ -72,10 +72,10 @@ pub fn list() -> Result<(), CasErr> {
   let keys = connection_map.keys();
   let stdout = io::stdout();
   let mut handle = stdout.lock();
-  writeln!(handle, "Connections")?;
+  writeln!(handle, "Connections:")?;
   keys
     .into_iter()
-    .fold(Ok(()), |acc, k| acc.and(writeln!(handle, "\t{}", k)))
+    .fold(Ok(()), |acc, k| acc.and(writeln!(handle, "{}", k)))
     .map_err(CasErr::from)
 }
 
@@ -83,7 +83,7 @@ pub fn describe(name: String) -> Result<(), CasErr> {
   let connection_map = read_conns()?;
   match connection_map.get(&name) {
     Some(connection) => {
-      println!("Connection: {:?}", connection);
+      println!("Connection {}:\n{}", name, connection);
       Ok(())
     }
     None => Err(CasErr::ConnNotFound),

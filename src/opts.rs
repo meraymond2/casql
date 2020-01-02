@@ -1,6 +1,7 @@
 use crate::sql_enum::SQLImpl;
 use clap::Clap;
 use serde_derive::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Clap, Debug, Deserialize, Serialize)]
 pub struct PartialConnOpts {
@@ -36,6 +37,13 @@ pub struct PartialConnOpts {
         help = "SQL implementation"
     )]
     sql_impl: Option<SQLImpl>,
+}
+
+impl fmt::Display for PartialConnOpts {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let text = toml::to_string(self).map_err(|_| fmt::Error)?;
+        write!(f, "{}", text)
+    }
 }
 
 #[derive(Clap, Debug)]
