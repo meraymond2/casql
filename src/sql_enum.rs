@@ -3,8 +3,8 @@ use serde::de::{self, Deserialize, Deserializer, Visitor};
 use serde::ser::{Serialize, Serializer};
 use std::str::FromStr;
 
-pub const POSTGRESQL: &str = "postgres";
-pub const MYSQL: &str = "mysql";
+const POSTGRESQL: &str = "postgres";
+const MYSQL: &str = "mysql";
 
 #[derive(Debug)]
 pub enum SQLImpl {
@@ -19,7 +19,8 @@ impl FromStr for SQLImpl {
     match s {
       MYSQL => Ok(SQLImpl::MySQL),
       POSTGRESQL => Ok(SQLImpl::PostgreSQL),
-      _ => Err(CasErr::UnreachableClap),
+      // Clap will panic! first.
+      _ => Err(CasErr::Unreachable),
     }
   }
 }
