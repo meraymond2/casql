@@ -98,13 +98,14 @@ pub fn describe(name: String) -> Result<(), CasErr> {
 //   }
 // }
 
-// pub fn delete(name: &str) {
-//   let mut connection_map = read_conns();
-//   match connection_map.remove(name) {
-//     Some(_) => {
-//       write_conns(connection_map);
-//       println!("Connection deleted: {}", name);
-//     }
-//     None => println!("Connection not found."),
-//   }
-// }
+pub fn delete(name: String) -> Result<(), CasErr> {
+  let mut connection_map = read_conns()?;
+  match connection_map.remove(&name) {
+    Some(_) => {
+      write_conns(connection_map)?;
+      println!("Connection deleted: {}", name);
+      Ok(())
+    }
+    None => Err(CasErr::ConnNotFound),
+  }
+}

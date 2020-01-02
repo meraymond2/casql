@@ -57,6 +57,12 @@ pub enum Connection {
         #[clap(name = "NAME")]
         conn_name: String,
     },
+
+    #[clap(name = "delete", about = "Delete a saved connection")]
+    Delete {
+        #[clap(name = "NAME")]
+        conn_name: String,
+    },
 }
 
 #[derive(Clap, Debug)]

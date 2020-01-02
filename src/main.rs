@@ -11,6 +11,7 @@ fn main() {
       Connection::Save{ conn_name, opts } => connections::save(conn_name, opts),
       Connection::List => connections::list(),
       Connection::Describe{ conn_name } => connections::describe(conn_name),
+      Connection::Delete{ conn_name } => connections::delete(conn_name),
     },
   };
 
