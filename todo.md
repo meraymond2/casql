@@ -1,3 +1,13 @@
+# Refactor TODOs
+Question: can the hashmaps be handled in a less imperative manner?
+
+Handle the expects in `connections.rs`.
+
+The Partial->Complete shouldn't be in merge.
+
+There are still some hard-coded strings in clap/main.
+
+# App TODOs
 1. Investigate the MySQL integration, and get a working type or two. This should be done before looking at refactoring the query logic.
 
 2. For now, I'm just going to clone all values everywhere. When everything is working, go back and use proper lifetimes.
