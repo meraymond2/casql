@@ -1,8 +1,9 @@
 
 use clap::Clap;
 use crate::sql_enum::SQLImpl;
+use serde_derive::{Deserialize, Serialize};
 
-#[derive(Clap, Debug)]
+#[derive(Clap, Debug, Deserialize, Serialize)]
 pub struct PartialConnOpts {
     #[clap(name = "HOST", long = "host", short = "H", help = "Database host")]
     host: Option<String>,

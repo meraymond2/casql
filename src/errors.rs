@@ -1,11 +1,28 @@
 // use crate::args::PartialConnOpts;
+use std::error;
 use std::fmt;
+use std::io;
+use std::io::ErrorKind;
 
 #[derive(Debug)]
 pub enum CasErr {
   // IncompleteArgs(PartialConnOpts),
   // InvalidPort,
+  FilePermissions,
+  NoHomeDir,
+  UnknownIO(String),
   Unreachable,
+}
+
+impl error::Error for CasErr {}
+
+impl From<io::Error> for CasErr {
+  fn from(err: io::Error) -> Self {
+    match err {
+      ref e if e.kind() == ErrorKind::PermissionDenied => return CasErr::FilePermissions,
+      e => CasErr::UnknownIO(format!("{}", e)),
+    }
+  }
 }
 
 impl fmt::Display for CasErr {
@@ -40,9 +57,13 @@ impl fmt::Display for CasErr {
       //   write!(f, "error: The following required arguments were not provided:\n{}{}{}{}{}\nFor more information try --help", host, database, port, sql_impl, user)
       // }
       // CasErr::InvalidPort => write!(f, "error: That is not a valid port number"),
-      CasErr::Unreachable => {
-        write!(f, "")
-      }
+      CasErr::FilePermissions => write!(
+        f,
+        "error: casql does not have permission to write to its config files"
+      ),
+      CasErr::NoHomeDir => write!(f, "error: Could not determine user’s home directory"),
+      CasErr::UnknownIO(reason) => write!(f, "error: There was an unexpected IO error: {}", reason),
+      CasErr::Unreachable => write!(f, ""),
     }
   }
 }
