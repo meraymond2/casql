@@ -9,6 +9,7 @@ pub enum CasErr {
   // IncompleteArgs(PartialConnOpts),
   // InvalidPort,
   FilePermissions,
+  InvalidConfigToml(String),
   NoHomeDir,
   UnknownIO(String),
   Unreachable,
@@ -61,6 +62,7 @@ impl fmt::Display for CasErr {
         f,
         "error: casql does not have permission to write to its config files"
       ),
+      CasErr::InvalidConfigToml(reason) => write!(f, "error: Could not parse connections.toml: {}", reason),
       CasErr::NoHomeDir => write!(f, "error: Could not determine user’s home directory"),
       CasErr::UnknownIO(reason) => write!(f, "error: There was an unexpected IO error: {}", reason),
       CasErr::Unreachable => write!(f, ""),

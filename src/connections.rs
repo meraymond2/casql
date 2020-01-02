@@ -12,32 +12,35 @@ use std::path::Path;
 const FILENAME: &str = "connections.toml";
 
 fn initialise(dir_path: &Path) -> Result<File, CasErr> {
-  DirBuilder::new().recursive(true).create(dir_path).and_then(|_| {
-    OpenOptions::new()
-    .read(true)
-    .write(true)
-    .create_new(true)
-    .open(dir_path.join(FILENAME))
-  }).map_err(CasErr::from)
+  DirBuilder::new()
+    .recursive(true)
+    .create(dir_path)
+    .and_then(|_| {
+      OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create_new(true)
+        .open(dir_path.join(FILENAME))
+    })
+    .map_err(CasErr::from)
 }
 
 fn read_conns() -> Result<HashMap<String, PartialConnOpts>, CasErr> {
   let dirs = ProjectDirs::from("", "", "Casql").ok_or(CasErr::NoHomeDir)?;
   let conns_path = dirs.config_dir().join(FILENAME);
-  // NEXT: can this be simplified?
   let mut file = match OpenOptions::new().read(true).open(&conns_path) {
     Ok(f) => f,
     Err(ref e) if e.kind() == ErrorKind::NotFound => match initialise(dirs.config_dir()) {
       Ok(f) => f,
-      Err(e) => return Err(CasErr::UnknownIO(format!("{}", e))),
+      Err(e) => return Err(CasErr::from(e)),
     },
     Err(ref e) if e.kind() == ErrorKind::PermissionDenied => return Err(CasErr::FilePermissions),
-    Err(e) => return Err(CasErr::UnknownIO(format!("{}", e))),
+    Err(e) => return Err(CasErr::from(e)),
   };
   let mut contents = String::new();
 
   file.read_to_string(&mut contents).unwrap();
-  Ok(toml::from_str(&contents).expect("TODO: Invalid toml in file"))
+  toml::from_str(&contents).map_err(|e| CasErr::InvalidConfigToml(format!("{}", e)))
 }
 
 // fn write_conns(table: HashMap<String, PartialConnOpts>) {
