@@ -1,6 +1,5 @@
-
-use clap::Clap;
 use crate::sql_enum::SQLImpl;
+use clap::Clap;
 use serde_derive::{Deserialize, Serialize};
 
 #[derive(Clap, Debug, Deserialize, Serialize)]
@@ -14,20 +13,41 @@ pub struct PartialConnOpts {
     #[clap(name = "USER", long = "user", short = "u", help = "Database user")]
     user: Option<String>,
 
-    #[clap(name = "PWD", long = "password", short = "w", help = "Database user’s password")]
+    #[clap(
+        name = "PWD",
+        long = "password",
+        short = "w",
+        help = "Database user’s password"
+    )]
     password: Option<String>,
 
-    #[clap(name = "DATABASE", long = "database", short = "d", help = "Database name")]
+    #[clap(
+        name = "DATABASE",
+        long = "database",
+        short = "d",
+        help = "Database name"
+    )]
     database: Option<String>,
 
-    #[clap(name = "SQL_IMPL", long = "implementation", short = "i", help = "SQL implementation")]
+    #[clap(
+        name = "SQL_IMPL",
+        long = "implementation",
+        short = "i",
+        help = "SQL implementation"
+    )]
     sql_impl: Option<SQLImpl>,
 }
 
 #[derive(Clap, Debug)]
 pub enum Connection {
     #[clap(name = "save", about = "Save a connection")]
-    Save(PartialConnOpts),
+    Save {
+        #[clap(name = "NAME")]
+        conn_name: String,
+
+        #[clap(flatten)]
+        opts: PartialConnOpts,
+    },
 
     #[clap(name = "list", about = "List saved connections")]
     List,
@@ -43,5 +63,5 @@ pub enum Connection {
 #[clap(about = "Quickly turn SQL into JSON.")]
 pub enum Opt {
     #[clap(name = "connection", about = "Operations on saved connections")]
-   Connection(Connection)
+    Connection(Connection),
 }

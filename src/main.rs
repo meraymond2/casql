@@ -8,10 +8,9 @@ use crate::opts::{Connection, Opt};
 fn main() {
   let res = match Opt::parse() {
     Opt::Connection(subcmd) => match subcmd {
-      // Connection::Save(opts) => println!("Opts: {:?}", opts),
-      Connection::Save(_opts) => Ok(()),
+      Connection::Save{ conn_name, opts } => connections::save(conn_name, opts),
       Connection::List => connections::list(),
-      Connection::Describe { conn_name } => connections::describe(conn_name),
+      Connection::Describe{ conn_name } => connections::describe(conn_name),
     },
   };
 
