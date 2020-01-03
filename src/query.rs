@@ -1,6 +1,8 @@
+use crate::connections;
 use crate::errors::CasErr;
 use crate::opts::PartialConnOpts;
 use crate::sql_enum::SQLImpl;
+use std::convert::TryFrom;
 
 #[derive(Debug)]
 pub struct ConnOpts {
@@ -12,26 +14,45 @@ pub struct ConnOpts {
   pub user: String,
 }
 
-pub enum ConnectionSpec {
-  Opts(ConnOpts),
-  Str(String),
+impl TryFrom<PartialConnOpts> for ConnOpts {
+  type Error = CasErr;
+
+  fn try_from(partial_opts: PartialConnOpts) -> Result<Self, Self::Error> {
+    match partial_opts {
+      PartialConnOpts {
+        database: Some(database),
+        host: Some(host),
+        password,
+        port: Some(port),
+        sql_impl: Some(sql_impl),
+        user: Some(user),
+      } => Ok(ConnOpts {
+        database,
+        host,
+        password,
+        port,
+        sql_impl,
+        user,
+      }),
+      _ => Err(CasErr::IncompleteArgs(partial_opts)),
+    }
+  }
 }
 
-// TODO: write a try_from for partial to complete ConnOpts
-// TODO: re-implement the load-connection method
-// TODO: re-implement the merge method
-// There will probably be some repetition here, I think it's ok for now
+pub fn exec_with_opts(opts: PartialConnOpts) -> Result<(), CasErr> {
+  let complete_opts = ConnOpts::try_from(opts)?;
+  println!("{:?}", complete_opts);
+  Ok(())
+}
 
-pub fn exec(
-  opts: PartialConnOpts,
-  to_load_opt: Option<String>,
-  conn_str_opt: Option<String>,
-) -> Result<(), CasErr> {
-  let conn_spec = match (to_load_opt, conn_str_opt) {
-    (None, Some(conn_str)) => ConnectionSpec::Str(conn_str),
-    (Some(conn_to_load), None) => ConnectionSpec::Str("?".to_owned()),
-    (None, None) => ConnectionSpec::Str("TODO".to_owned()),
-    _ => return Err(CasErr::Unreachable),
-  };
+pub fn exec_with_loaded_opts(opts: PartialConnOpts, conn_name: String) -> Result<(), CasErr> {
+  let loaded_opts = connections::load(conn_name)?;
+  let complete_opts = ConnOpts::try_from(loaded_opts.merge(opts))?;
+  println!("{:?}", complete_opts);
+  Ok(())
+}
+
+pub fn exec_with_conn_str(conn_str: String) -> Result<(), CasErr> {
+  println!("{}", conn_str);
   Ok(())
 }

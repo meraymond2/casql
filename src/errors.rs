@@ -1,4 +1,4 @@
-// use crate::args::PartialConnOpts;
+use crate::opts::PartialConnOpts;
 use std::error;
 use std::fmt;
 use std::io;
@@ -6,7 +6,7 @@ use std::io::ErrorKind;
 
 #[derive(Debug)]
 pub enum CasErr {
-  // IncompleteArgs(PartialConnOpts),
+  IncompleteArgs(PartialConnOpts),
   ConnNotFound,
   FilePermissions,
   InvalidConfigToml(String),
@@ -29,34 +29,29 @@ impl From<io::Error> for CasErr {
 impl fmt::Display for CasErr {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
     match self {
-      // CasErr::IncompleteArgs(opts) => {
-      //   let host = if opts.host.is_none() {
-      //     "    --host\n"
-      //   } else {
-      //     ""
-      //   };
-      //   let database = if opts.database.is_none() {
-      //     "    --database\n"
-      //   } else {
-      //     ""
-      //   };
-      //   let port = if opts.port.is_none() {
-      //     "    --port\n"
-      //   } else {
-      //     ""
-      //   };
-      //   let sql_impl = if opts.sql_impl.is_none() {
-      //     "    --sql_impl\n"
-      //   } else {
-      //     ""
-      //   };
-      //   let user = if opts.user.is_none() {
-      //     "    --user\n"
-      //   } else {
-      //     ""
-      //   };
-      //   write!(f, "error: The following required arguments were not provided:\n{}{}{}{}{}\nFor more information try --help", host, database, port, sql_impl, user)
-      // }
+      CasErr::IncompleteArgs(opts) => {
+        let database = match opts.database {
+          Some(_) => "",
+          None => "    --database\n",
+        };
+        let host = match opts.host {
+          Some(_) => "",
+          None => "    --host\n",
+        };
+        let port = match opts.port {
+          Some(_) => "",
+          None => "    --port\n",
+        };
+        let sql_impl = match opts.sql_impl {
+          Some(_) => "",
+          None => "    --implementation\n",
+        };
+        let user = match opts.user {
+          Some(_) => "",
+          None => "    --user\n",
+        };
+        write!(f, "error: The following required arguments were not provided:\n{}{}{}{}{}\nFor more information try --help", database, host, port, sql_impl, user)
+      }
       CasErr::ConnNotFound => write!(f, "error: That connection was not found"),
       CasErr::FilePermissions => write!(
         f,

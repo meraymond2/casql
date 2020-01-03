@@ -6,7 +6,7 @@ use std::fmt;
 #[derive(Clap, Debug, Deserialize, Serialize)]
 pub struct PartialConnOpts {
     #[clap(name = "HOST", long = "host", short = "H", help = "Database host")]
-    host: Option<String>,
+    pub host: Option<String>,
 
     #[clap(
         name = "PORT",
@@ -18,10 +18,10 @@ pub struct PartialConnOpts {
             ("SQL_IMPL", Some(MYSQL), "3306"),
         ]"#)
     )]
-    port: Option<u16>,
+    pub port: Option<u16>,
 
     #[clap(name = "USER", long = "user", short = "u", help = "Database user")]
-    user: Option<String>,
+    pub user: Option<String>,
 
     #[clap(
         name = "PWD",
@@ -29,7 +29,7 @@ pub struct PartialConnOpts {
         short = "w",
         help = "Database user’s password"
     )]
-    password: Option<String>,
+    pub password: Option<String>,
 
     #[clap(
         name = "DATABASE",
@@ -37,7 +37,7 @@ pub struct PartialConnOpts {
         short = "d",
         help = "Database name"
     )]
-    database: Option<String>,
+    pub database: Option<String>,
 
     #[clap(
         name = "SQL_IMPL",
@@ -46,7 +46,20 @@ pub struct PartialConnOpts {
         help = "SQL implementation",
         raw(possible_values = r#"&[POSTGRESQL, MYSQL]"#)
     )]
-    sql_impl: Option<SQLImpl>,
+    pub sql_impl: Option<SQLImpl>,
+}
+
+impl PartialConnOpts {
+  pub fn merge(self, overlay: PartialConnOpts) -> PartialConnOpts {
+    PartialConnOpts {
+      host: overlay.host.or(self.host),
+      password: overlay.password.or(self.password),
+      database: overlay.database.or(self.database),
+      port: overlay.port.or(self.port),
+      sql_impl: overlay.sql_impl.or(self.sql_impl),
+      user: overlay.user.or(self.user),
+    }
+  }
 }
 
 impl fmt::Display for PartialConnOpts {

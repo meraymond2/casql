@@ -14,7 +14,9 @@ fn main() {
       Connection::Describe { conn_name } => connections::describe(conn_name),
       Connection::Delete { conn_name } => connections::delete(conn_name),
     },
-    Opt::Query { conn_name, conn_str, opts } => query::exec(opts, conn_name, conn_str)
+    Opt::Query { conn_name: _, conn_str: Some(conn_str), opts: _ } => query::exec_with_conn_str(conn_str),
+    Opt::Query { conn_name: None, conn_str: None, opts } => {query::exec_with_opts(opts)},
+    Opt::Query { conn_name: Some(conn_name), conn_str: None, opts } => {query::exec_with_loaded_opts(opts, conn_name)},
   };
 
   std::process::exit(match res {

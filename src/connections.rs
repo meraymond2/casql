@@ -90,13 +90,13 @@ pub fn describe(name: String) -> Result<(), CasErr> {
   }
 }
 
-// pub fn load(name: &str) -> PartialConnOpts {
-//   let mut connection_map = read_conns();
-//   match connection_map.remove(name) { // is there a better way to get the owned value?
-//     Some(connection) => connection,
-//     None => panic!("Connection not found."),
-//   }
-// }
+pub fn load(name: String) -> Result<PartialConnOpts, CasErr> {
+  let mut connection_map = read_conns()?;
+  match connection_map.remove(&name) {
+    Some(connection) => Ok(connection),
+    None => Err(CasErr::ConnNotFound),
+  }
+}
 
 pub fn delete(name: String) -> Result<(), CasErr> {
   let mut connection_map = read_conns()?;
