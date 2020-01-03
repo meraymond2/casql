@@ -6,30 +6,6 @@
 // use std::convert::TryFrom;
 // use std::str::FromStr;
 
-// #[derive(Debug, Deserialize, Serialize)]
-// pub struct PartialConnOpts {
-//   pub host: Option<String>,
-//   pub password: Option<String>,
-//   pub database: Option<String>,
-//   pub port: Option<u16>,
-//   pub sql_impl: Option<SQLImpl>,
-//   pub user: Option<String>,
-// }
-
-// #[derive(Debug, Deserialize, Serialize)]
-// pub struct ConnOpts {
-//   pub host: String,
-//   pub password: Option<String>,
-//   pub database: String,
-//   pub port: u16,
-//   pub sql_impl: SQLImpl,
-//   pub user: String,
-// }
-
-// pub enum ConnectionSpec {
-//   Opts(ConnOpts),
-//   Str(String),
-// }
 
 // impl PartialConnOpts {
 //   pub fn merge(self, overlay: PartialConnOpts) -> Result<ConnectionSpec, CasErr> {

@@ -1,4 +1,4 @@
-use crate::sql_enum::{SQLImpl, POSTGRESQL, MYSQL};
+use crate::sql_enum::{SQLImpl, MYSQL, POSTGRESQL};
 use clap::Clap;
 use serde_derive::{Deserialize, Serialize};
 use std::fmt;
@@ -8,10 +8,16 @@ pub struct PartialConnOpts {
     #[clap(name = "HOST", long = "host", short = "H", help = "Database host")]
     host: Option<String>,
 
-    #[clap(name = "PORT", long = "port", short = "p", help = "Database port", raw(default_value_ifs = r#"&[
-        ("SQL_IMPL", Some(POSTGRESQL), "5432"),
-        ("SQL_IMPL", Some(MYSQL), "3306"),
-    ]"#))]
+    #[clap(
+        name = "PORT",
+        long = "port",
+        short = "p",
+        help = "Database port",
+        raw(default_value_ifs = r#"&[
+            ("SQL_IMPL", Some(POSTGRESQL), "5432"),
+            ("SQL_IMPL", Some(MYSQL), "3306"),
+        ]"#)
+    )]
     port: Option<u16>,
 
     #[clap(name = "USER", long = "user", short = "u", help = "Database user")]
@@ -37,7 +43,8 @@ pub struct PartialConnOpts {
         name = "SQL_IMPL",
         long = "implementation",
         short = "i",
-        help = "SQL implementation"
+        help = "SQL implementation",
+        raw(possible_values = r#"&[POSTGRESQL, MYSQL]"#)
     )]
     sql_impl: Option<SQLImpl>,
 }
@@ -77,8 +84,44 @@ pub enum Connection {
 }
 
 #[derive(Clap, Debug)]
-#[clap(about = "Quickly turn SQL into JSON.")]
+#[clap(about = "Quickly turn SQL into JSON.", author = "")]
 pub enum Opt {
     #[clap(name = "connection", about = "Operations on saved connections")]
     Connection(Connection),
+
+    // TODO: Move to separate struct, can it be expressed more cleanly?
+    #[clap(
+        name = "query",
+        about = "Execute a SQL query. Connection can be specified as a connection string or individual options."
+    )]
+    Query {
+        #[clap(flatten)]
+        opts: PartialConnOpts,
+
+        #[clap(
+            name = "NAME",
+            long = "load",
+            short = "l",
+            help = "Load a saved connection"
+        )]
+        conn_name: Option<String>,
+
+        #[clap(
+            name = "CONN_STR",
+            long = "conn-str",
+            short = "s",
+            help = "SQL server connection string",
+            // TODO: this outputs the wrong error msg,
+            // might be a bug in Clap?
+            raw(conflicts_with_all = r#"&[
+                "HOST",
+                "PORT",
+                "USER",
+                "PWD",
+                "SQL_IMPL",
+                "NAME"
+            ]"#)
+        )]
+        conn_str: Option<String>,
+    },
 }
