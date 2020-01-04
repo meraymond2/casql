@@ -1,6 +1,8 @@
 use crate::connections;
 use crate::errors::CasErr;
 use crate::opts::PartialConnOpts;
+use crate::mysql;
+use crate::postgres;
 use crate::sql_enum::SQLImpl;
 use std::convert::TryFrom;
 
@@ -39,21 +41,21 @@ impl TryFrom<PartialConnOpts> for ConnOpts {
   }
 }
 
-enum ConnectionSpec {
+pub enum ConnectionSpec {
   Opts(ConnOpts),
   Str(String),
 }
 
-fn exec(conn_spec: ConnectionSpec) -> Result<(), CasErr> {
+fn exec(query: String, conn_spec: ConnectionSpec) -> Result<(), CasErr> {
   match conn_spec {
     ConnectionSpec::Opts(ConnOpts {
       sql_impl: SQLImpl::PostgreSQL,
       ..
-    }) => Ok(()),
+    }) => postgres::exec(query, conn_spec),
     ConnectionSpec::Opts(ConnOpts {
       sql_impl: SQLImpl::MySQL,
       ..
-    }) => Ok(()),
+    }) => mysql::exec(query, conn_spec),
     ConnectionSpec::Str(conn_string) => {
       Ok(())
     }
@@ -62,8 +64,7 @@ fn exec(conn_spec: ConnectionSpec) -> Result<(), CasErr> {
 
 pub fn exec_with_opts(query: String, opts: PartialConnOpts) -> Result<(), CasErr> {
   let complete_opts = ConnOpts::try_from(opts)?;
-  println!("{:?}", complete_opts);
-  Ok(())
+  exec(query, ConnectionSpec::Opts(complete_opts))
 }
 
 pub fn exec_with_loaded_opts(
@@ -73,11 +74,9 @@ pub fn exec_with_loaded_opts(
 ) -> Result<(), CasErr> {
   let loaded_opts = connections::load(conn_name)?;
   let complete_opts = ConnOpts::try_from(loaded_opts.merge(opts))?;
-  println!("{:?}", complete_opts);
-  Ok(())
+  exec(query, ConnectionSpec::Opts(complete_opts))
 }
 
 pub fn exec_with_conn_str(query: String, conn_str: String) -> Result<(), CasErr> {
-  println!("{}", conn_str);
-  Ok(())
+  exec(query, ConnectionSpec::Str(conn_str))
 }

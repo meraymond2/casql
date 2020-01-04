@@ -1,6 +1,8 @@
 mod connections;
 mod errors;
 mod opts;
+mod mysql;
+mod postgres;
 mod query;
 mod sql_enum;
 
