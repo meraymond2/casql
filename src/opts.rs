@@ -102,7 +102,6 @@ pub enum Opt {
     #[clap(name = "connection", about = "Operations on saved connections")]
     Connection(Connection),
 
-    // TODO: Move to separate struct, can it be expressed more cleanly?
     #[clap(
         name = "query",
         about = "Execute a SQL query. Connection can be specified as a connection string or individual options."
@@ -136,5 +135,8 @@ pub enum Opt {
             ]"#)
         )]
         conn_str: Option<String>,
+
+        #[clap(name = "QUERY", help = "SQL query to execute")]
+        query: String,
     },
 }

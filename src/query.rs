@@ -39,20 +39,45 @@ impl TryFrom<PartialConnOpts> for ConnOpts {
   }
 }
 
-pub fn exec_with_opts(opts: PartialConnOpts) -> Result<(), CasErr> {
+enum ConnectionSpec {
+  Opts(ConnOpts),
+  Str(String),
+}
+
+fn exec(conn_spec: ConnectionSpec) -> Result<(), CasErr> {
+  match conn_spec {
+    ConnectionSpec::Opts(ConnOpts {
+      sql_impl: SQLImpl::PostgreSQL,
+      ..
+    }) => Ok(()),
+    ConnectionSpec::Opts(ConnOpts {
+      sql_impl: SQLImpl::MySQL,
+      ..
+    }) => Ok(()),
+    ConnectionSpec::Str(conn_string) => {
+      Ok(())
+    }
+  }
+}
+
+pub fn exec_with_opts(query: String, opts: PartialConnOpts) -> Result<(), CasErr> {
   let complete_opts = ConnOpts::try_from(opts)?;
   println!("{:?}", complete_opts);
   Ok(())
 }
 
-pub fn exec_with_loaded_opts(opts: PartialConnOpts, conn_name: String) -> Result<(), CasErr> {
+pub fn exec_with_loaded_opts(
+  query: String,
+  opts: PartialConnOpts,
+  conn_name: String,
+) -> Result<(), CasErr> {
   let loaded_opts = connections::load(conn_name)?;
   let complete_opts = ConnOpts::try_from(loaded_opts.merge(opts))?;
   println!("{:?}", complete_opts);
   Ok(())
 }
 
-pub fn exec_with_conn_str(conn_str: String) -> Result<(), CasErr> {
+pub fn exec_with_conn_str(query: String, conn_str: String) -> Result<(), CasErr> {
   println!("{}", conn_str);
   Ok(())
 }
