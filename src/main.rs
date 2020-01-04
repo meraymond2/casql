@@ -1,7 +1,7 @@
 mod connections;
 mod errors;
-mod opts;
 mod mysql;
+mod opts;
 mod postgres;
 mod query;
 mod sql_enum;
@@ -16,9 +16,12 @@ fn main() {
       Connection::Describe { conn_name } => connections::describe(conn_name),
       Connection::Delete { conn_name } => connections::delete(conn_name),
     },
-    Opt::Query { conn_name: _, conn_str: Some(conn_str), opts: _ , query} => query::exec_with_conn_str(query, conn_str),
-    Opt::Query { conn_name: None, conn_str: None, opts , query} => {query::exec_with_opts(query, opts)},
-    Opt::Query { conn_name: Some(conn_name), conn_str: None, opts , query} => {query::exec_with_loaded_opts(query, opts, conn_name)},
+    Opt::Query {
+      conn_name,
+      conn_str,
+      opts,
+      query,
+    } => query::exec(conn_name, conn_str, opts, query),
   };
 
   std::process::exit(match res {
