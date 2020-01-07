@@ -1,4 +1,5 @@
 use crate::opts::PartialConnOpts;
+use mysql;
 use std::error;
 use std::fmt;
 use std::io;
@@ -12,7 +13,9 @@ pub enum CasErr {
   InvalidConfigToml(String),
   InvalidConnectionString,
   NoHomeDir,
+  InvalidSQLUrl,
   UnknownIO(String),
+  UnknownSQL(String),
   Unreachable,
 }
 
@@ -24,6 +27,18 @@ impl From<io::Error> for CasErr {
       ref e if e.kind() == ErrorKind::PermissionDenied => return CasErr::FilePermissions,
       e => CasErr::UnknownIO(format!("{}", e)),
     }
+  }
+}
+
+impl From<mysql::error::UrlError> for CasErr {
+  fn from(_err: mysql::error::UrlError) -> Self {
+    CasErr::InvalidSQLUrl
+  }
+}
+
+impl From<mysql::error::Error> for CasErr {
+  fn from(err: mysql::error::Error) -> Self {
+    CasErr::UnknownSQL(format!("{}", err))
   }
 }
 
@@ -60,8 +75,10 @@ impl fmt::Display for CasErr {
       ),
       CasErr::InvalidConfigToml(reason) => write!(f, "error: {}", reason),
       CasErr::InvalidConnectionString => write!(f, "error: Connection string could not be associated with a SQL backend"),
+      CasErr::InvalidSQLUrl => write!(f, "error: Could not connect to the database with that SQL url"),
       CasErr::NoHomeDir => write!(f, "error: Could not determine user’s home directory"),
       CasErr::UnknownIO(reason) => write!(f, "error: There was an unexpected IO error: {}", reason),
+      CasErr::UnknownSQL(reason) => write!(f, "error: There was a problem connecting to the database: {}", reason),
       CasErr::Unreachable => write!(f, ""),
     }
   }
