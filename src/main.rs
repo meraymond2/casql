@@ -9,7 +9,7 @@ mod sql_enum;
 use crate::opts::{Connection, Opt};
 
 fn main() {
-  let res = match Opt::parse() {
+  let res = match opts::parse_opts() {
     Opt::Connection(subcmd) => match subcmd {
       Connection::Save { conn_name, opts } => connections::save(conn_name, opts),
       Connection::List => connections::list(),

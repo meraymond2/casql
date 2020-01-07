@@ -13,10 +13,10 @@ pub struct PartialConnOpts {
         long = "port",
         short = "p",
         help = "Database port",
-        raw(default_value_ifs = r#"&[
+        default_value_ifs = &[
             ("SQL_IMPL", Some(POSTGRESQL), "5432"),
             ("SQL_IMPL", Some(MYSQL), "3306"),
-        ]"#)
+        ]
     )]
     pub port: Option<u16>,
 
@@ -44,7 +44,7 @@ pub struct PartialConnOpts {
         long = "implementation",
         short = "i",
         help = "SQL implementation",
-        raw(possible_values = r#"&[POSTGRESQL, MYSQL]"#)
+        possible_values = &[POSTGRESQL, MYSQL]
     )]
     pub sql_impl: Option<SQLImpl>,
 }
@@ -97,7 +97,7 @@ pub enum Connection {
 }
 
 #[derive(Clap, Debug)]
-#[clap(about = "Quickly turn SQL into JSON.", author = "")]
+#[clap(about = "Quickly turn SQL into JSON.")]
 pub enum Opt {
     #[clap(name = "connection", about = "Operations on saved connections")]
     Connection(Connection),
@@ -125,18 +125,22 @@ pub enum Opt {
             help = "SQL server connection string",
             // TODO: this outputs the wrong error msg,
             // might be a bug in Clap?
-            raw(conflicts_with_all = r#"&[
+            conflicts_with_all = &[
                 "HOST",
                 "PORT",
                 "USER",
                 "PWD",
                 "SQL_IMPL",
                 "NAME"
-            ]"#)
+            ]
         )]
         conn_str: Option<String>,
 
         #[clap(name = "QUERY", help = "SQL query to execute")]
         query: String,
     },
+}
+
+pub fn parse_opts() -> Opt {
+    Opt::parse()
 }
