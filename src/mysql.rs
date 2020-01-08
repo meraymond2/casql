@@ -2,6 +2,11 @@ use crate::errors::CasErr;
 use crate::query::ConnectionSpec;
 use mysql::{Conn, Opts, OptsBuilder};
 
+// TODOS:
+// 1. Implement From Value -> CasVal
+// 2. Handle the various mysql errors
+// 3. Implement the json printing
+
 pub fn exec(query: String, conn_spec: ConnectionSpec) -> Result<(), CasErr> {
   let mut conn = match conn_spec {
     ConnectionSpec::Str(url) => {
@@ -19,16 +24,24 @@ pub fn exec(query: String, conn_spec: ConnectionSpec) -> Result<(), CasErr> {
       Conn::new(builder)
     }
   }?;
+
   let res = conn.query(query)?;
+  let mut rows: Vec<std::collections::HashMap<String, mysql::Value>> = Vec::new();
   let columns = res.column_indexes();
-  for row_opt in res {
-    let mut row = row_opt?;
-    println!("{:?}", row);
-    for val in columns.values() {
-      let v: mysql::Value = row.take(*val).unwrap();
-      println!("Column: {:?}, Row: {:?}.", val, v)
+
+  for tuple_opt in res {
+    let mut tuple = tuple_opt?;
+    let mut row: std::collections::HashMap<String, mysql::Value> =
+      std::collections::HashMap::new();
+
+    for (name, idx) in &columns {
+      let v: mysql::Value = tuple.take(*idx).unwrap();
+      row.insert(name.to_owned(), v);
     }
-    // println!("{:?}", row.take())
+    rows.push(row);
   }
+
+  // let as_json = serde_json::to_string(&rows).unwrap();
+  println!("{:?}", rows);
   Ok(())
 }
