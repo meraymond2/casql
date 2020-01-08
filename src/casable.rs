@@ -1,6 +1,7 @@
+use chrono::{DateTime, Local, Utc};
 use mysql;
+use mysql::consts::ColumnType;
 use serde::ser::{Serialize, Serializer};
-use chrono::{DateTime, Utc, Local};
 
 #[derive(Clone, Debug)]
 pub enum CasVal {
@@ -38,18 +39,83 @@ impl Serialize for CasVal {
   }
 }
 
-impl From<mysql::Value> for CasVal {
-  fn from(my_val: mysql::Value) -> Self {
-    match my_val {
-      mysql::Value::NULL => CasVal::Null,
-      mysql::Value::Bytes(bytes) => CasVal::Str(String::from_utf8(bytes).unwrap()),
-      mysql::Value::Int(i) => CasVal::Int(i),
-      mysql::Value::UInt(u) => CasVal::Uint(u),
-      mysql::Value::Float(f) => CasVal::Float(f),
-      // year, month, day, hour, minutes, seconds, micro seconds
-      // mysql::Value::Date(u16, u8, u8, u8, u8, u8, u32)
-      // mysql::Value::Time(bool, u32, u8, u8, u8, u32)
-      _ => CasVal::Unknown,
+pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> CasVal {
+  match my_val {
+    mysql::Value::NULL => CasVal::Null,
+    mysql::Value::Bytes(bytes) => {
+      let s = String::from_utf8(bytes).unwrap();
+      match ty {
+        ColumnType::MYSQL_TYPE_LONG => CasVal::Int(i64::from_str_radix(&s, 10).unwrap()),
+        // ColumnType::MYSQL_TYPE_DECIMAL
+        // ColumnType::MYSQL_TYPE_TINY
+        // ColumnType::MYSQL_TYPE_SHORT
+        // ColumnType::MYSQL_TYPE_LONG
+        // ColumnType::MYSQL_TYPE_FLOAT
+        // ColumnType::MYSQL_TYPE_DOUBLE
+        // ColumnType::MYSQL_TYPE_NULL
+        ColumnType::MYSQL_TYPE_TIMESTAMP => {
+          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
+          // the string looks like "2020-01-08 22:00:14"
+          CasVal::Str(s)
+        },
+        // ColumnType::MYSQL_TYPE_LONGLONG
+        // ColumnType::MYSQL_TYPE_INT24
+        // ColumnType::MYSQL_TYPE_DATE
+        // ColumnType::MYSQL_TYPE_TIME
+        ColumnType::MYSQL_TYPE_DATETIME => {
+          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
+          // the string looks like "2020-01-08 22:00:14"
+          CasVal::Str(s)
+        },
+        // ColumnType::MYSQL_TYPE_YEAR
+        // ColumnType::MYSQL_TYPE_NEWDATE
+        ColumnType::MYSQL_TYPE_VARCHAR => CasVal::Str(s),
+        // ColumnType::MYSQL_TYPE_BIT
+        // ColumnType::MYSQL_TYPE_TIMESTAMP2
+        // ColumnType::MYSQL_TYPE_DATETIME2
+        // ColumnType::MYSQL_TYPE_TIME2
+        // ColumnType::MYSQL_TYPE_JSON
+        // ColumnType::MYSQL_TYPE_NEWDECIMAL
+        // ColumnType::MYSQL_TYPE_ENUM
+        // ColumnType::MYSQL_TYPE_SET
+        // ColumnType::MYSQL_TYPE_TINY_BLOB
+        // ColumnType::MYSQL_TYPE_MEDIUM_BLOB
+        // ColumnType::MYSQL_TYPE_LONG_BLOB
+        ColumnType::MYSQL_TYPE_BLOB => {
+          // What's a blob???
+          CasVal::Str(s)
+        },
+        ColumnType::MYSQL_TYPE_VAR_STRING => CasVal::Str(s),
+        ColumnType::MYSQL_TYPE_STRING => CasVal::Str(s),
+        // ColumnType::MYSQL_TYPE_GEOMETRY
+        _ => {
+          eprintln!("As yet unsupported MySQL type: {:?}", ty);
+          CasVal::Str("Cascat!!!!".to_owned())
+        }
+          ,
+      }
     }
+    mysql::Value::Int(i) => CasVal::Int(i),
+    mysql::Value::UInt(u) => CasVal::Uint(u),
+    mysql::Value::Float(f) => CasVal::Float(f),
+    // year, month, day, hour, minutes, seconds, micro seconds
+    // mysql::Value::Date(u16, u8, u8, u8, u8, u8, u32)
+    // mysql::Value::Time(bool, u32, u8, u8, u8, u32)
+    _ => CasVal::Unknown,
   }
 }
+// impl From<mysql::Value> for CasVal {
+//   fn from(my_val: mysql::Value) -> Self {
+//     match my_val {
+//       mysql::Value::NULL => CasVal::Null,
+//       mysql::Value::Bytes(bytes) => CasVal::Str(String::from_utf8(bytes).unwrap()),
+//       mysql::Value::Int(i) => CasVal::Int(i),
+//       mysql::Value::UInt(u) => CasVal::Uint(u),
+//       mysql::Value::Float(f) => CasVal::Float(f),
+//       // year, month, day, hour, minutes, seconds, micro seconds
+//       // mysql::Value::Date(u16, u8, u8, u8, u8, u8, u32)
+//       // mysql::Value::Time(bool, u32, u8, u8, u8, u32)
+//       _ => CasVal::Unknown,
+//     }
+//   }
+// }
