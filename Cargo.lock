@@ -155,6 +155,7 @@ dependencies = [
 name = "casql"
 version = "0.1.0"
 dependencies = [
+ "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "clap 3.0.0-beta.1 (git+https://github.com/clap-rs/clap.git)",
  "directories 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "mysql 17.0.0 (registry+https://github.com/rust-lang/crates.io-index)",

@@ -1,3 +1,4 @@
+mod casable;
 mod connections;
 mod errors;
 mod mysql;

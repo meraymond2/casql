@@ -1,3 +1,4 @@
+use crate::casable::CasVal;
 use crate::errors::CasErr;
 use crate::query::ConnectionSpec;
 use mysql::{Conn, Opts, OptsBuilder};
@@ -26,22 +27,23 @@ pub fn exec(query: String, conn_spec: ConnectionSpec) -> Result<(), CasErr> {
   }?;
 
   let res = conn.query(query)?;
-  let mut rows: Vec<std::collections::HashMap<String, mysql::Value>> = Vec::new();
+  let mut rows: Vec<std::collections::HashMap<String, CasVal>> = Vec::new();
   let columns = res.column_indexes();
 
   for tuple_opt in res {
     let mut tuple = tuple_opt?;
-    let mut row: std::collections::HashMap<String, mysql::Value> =
+    let mut row: std::collections::HashMap<String, CasVal> =
       std::collections::HashMap::new();
 
     for (name, idx) in &columns {
-      let v: mysql::Value = tuple.take(*idx).unwrap();
-      row.insert(name.to_owned(), v);
+      let my_v: mysql::Value = tuple.take(*idx).unwrap();
+      let cas_v: CasVal = my_v.into();
+      row.insert(name.to_owned(), cas_v);
     }
     rows.push(row);
   }
 
-  // let as_json = serde_json::to_string(&rows).unwrap();
-  println!("{:?}", rows);
+  let json = serde_json::to_string(&rows).unwrap();
+  println!("{}", json);
   Ok(())
 }
