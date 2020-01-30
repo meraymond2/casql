@@ -90,7 +90,13 @@ pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> 
 
         // Date Types
         ColumnType::MYSQL_TYPE_TIMESTAMP => {
-          // TODO later
+          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
+          // the string looks like "2020-01-08 22:00:14"
+          // TODO: How to do this when the format isn't known...hmmm
+          // you can specify up to 6 microseconds
+          // might need a loop
+          // 2020-01-09 21:35:41
+          // 2020-01-09 21:35:41.0000
           CasVal::Str(s)
         }
         // // ColumnType::MYSQL_TYPE_DATE
