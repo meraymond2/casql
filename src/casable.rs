@@ -1,6 +1,8 @@
-use chrono::{DateTime, NaiveDateTime, Local, Utc};
+use chrono::{DateTime, Local, Utc};
 use mysql;
 use mysql::consts::ColumnType;
+use postgres::types;
+use postgres::types::{FromSql, Type};
 use serde::ser::{Serialize, Serializer};
 use std::str::FromStr;
 
@@ -88,30 +90,16 @@ pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> 
 
         // Date Types
         ColumnType::MYSQL_TYPE_TIMESTAMP => {
-          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
-          // the string looks like "2020-01-08 22:00:14"
-          // TODO: How to do this when the format isn't known...hmmm
-          // you can specify up to 6 microseconds
-          // might need a loop
-          // 2020-01-09 21:35:41
-          // 2020-01-09 21:35:41.0000
-          println!("{}", &s);
-          println!("{:?}", &ty);
-
-          // match NaiveDateTime::parse_from_str(&s, "%Y-%m-%d %H:%M:%S") {
-          //   Ok(d) => println!("{:?}", d),
-          //   Err(e) => println!("{:?}", e),
-          // };
-          // let date: DateTime<Utc> = DateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S").unwrap();
-          CasVal::Unknown
+          // TODO later
+          CasVal::Str(s)
         }
         // // ColumnType::MYSQL_TYPE_DATE
         // // ColumnType::MYSQL_TYPE_TIME
-        // ColumnType::MYSQL_TYPE_DATETIME => {
-        //   // TODO: Convert to UTC Datetime, or TZ, whichever this represents
-        //   // the string looks like "2020-01-08 22:00:14"
-        //   CasVal::Str(s)
-        // }
+        ColumnType::MYSQL_TYPE_DATETIME => {
+          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
+          // the string looks like "2020-01-08 22:00:14"
+          CasVal::Str(s)
+        }
         // ColumnType::MYSQL_TYPE_YEAR
         // ColumnType::MYSQL_TYPE_NEWDATE
         // ColumnType::MYSQL_TYPE_BIT
@@ -137,7 +125,6 @@ pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> 
         }
       }
     }
-    _ => CasVal::Unknown,
   }
 }
 // impl From<mysql::Value> for CasVal {
@@ -155,3 +142,81 @@ pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> 
 //     }
 //   }
 // }
+
+impl FromSql for CasVal {
+  fn from_sql(ty: &Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    let val = match ty {
+      &types::UUID => {
+        let x: uuid::Uuid = FromSql::from_sql(ty, raw)?;
+        CasVal::UUID(x.to_string())
+      }
+      &types::TEXT => {
+        let x: String = FromSql::from_sql(ty, raw)?;
+        CasVal::Str(x)
+      }
+      &types::VARCHAR => {
+        let x: String = FromSql::from_sql(ty, raw)?;
+        CasVal::Str(x)
+      }
+      &types::TIMESTAMP => {
+        let x: DateTime<Utc> = FromSql::from_sql(ty, raw)?;
+        CasVal::UtcDate(x)
+      }
+      &types::TIMESTAMPTZ => {
+        let x: DateTime<Local> = FromSql::from_sql(ty, raw)?;
+        CasVal::LocalDate(x)
+      }
+      &types::CHAR => {
+        let x: i8 = FromSql::from_sql(ty, raw)?;
+        CasVal::Int32(x.into())
+      }
+      &types::INT2 => {
+        let x: i16 = FromSql::from_sql(ty, raw)?;
+        CasVal::Int32(x.into())
+      }
+      &types::INT4 => {
+        let x: i32 = FromSql::from_sql(ty, raw)?;
+        CasVal::Int32(x.into())
+      }
+      &types::INT8 => {
+        let x: i64 = FromSql::from_sql(ty, raw)?;
+        CasVal::Int64(x)
+      }
+      &types::FLOAT4 => {
+        let val: f32 = FromSql::from_sql(ty, raw)?;
+        CasVal::Float32(val.into())
+      }
+      &types::FLOAT8 => {
+        let val: f64 = FromSql::from_sql(ty, raw)?;
+        CasVal::Float64(val)
+      }
+      &types::BOOL => {
+        let val: bool = FromSql::from_sql(ty, raw)?;
+        CasVal::Bool(val)
+      }
+      &types::JSON | &types::JSONB => {
+        let val: serde_json::Value = FromSql::from_sql(ty, raw)?;
+        CasVal::Json(val)
+      }
+      _other => {
+        // This gets me the vals, and I can get the oid as well. I think I would need
+        // to get the matching value from another table.
+        // match other.kind() {
+        //   postgres::types::Kind::Enum(vals) => println!("Hey, an enum {:?}", vals),
+        //   _ => println!("???, who knows"),
+        // }
+        eprintln!("Unrecognised type: {:?}", *ty);
+        CasVal::Unknown
+      }
+    };
+    Ok(val)
+  }
+
+  fn from_sql_null(_ty: &Type) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
+    Ok(CasVal::Null)
+  }
+
+  fn accepts(_ty: &Type) -> bool {
+    true
+  }
+}

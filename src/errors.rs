@@ -1,5 +1,6 @@
 use crate::opts::PartialConnOpts;
 use mysql;
+use postgres;
 use std::error;
 use std::fmt;
 use std::io;
@@ -41,6 +42,13 @@ impl From<mysql::error::Error> for CasErr {
     CasErr::UnknownSQL(format!("{}", err))
   }
 }
+
+impl From<postgres::error::Error> for CasErr {
+  fn from(err: postgres::error::Error) -> Self {
+    CasErr::UnknownSQL(format!("{}", err))
+  }
+}
+
 
 impl fmt::Display for CasErr {
   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
