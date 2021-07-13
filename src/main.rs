@@ -1,11 +1,9 @@
 mod casable;
 mod connections;
 mod errors;
-mod mysql;
 mod opts;
 mod postgres;
 mod query;
-mod sql_enum;
 
 use crate::opts::{Connection, Opt};
 

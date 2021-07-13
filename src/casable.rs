@@ -1,10 +1,7 @@
 use chrono::{DateTime, Local, Utc};
-use mysql;
-use mysql::consts::ColumnType;
 use postgres::types;
 use postgres::types::{FromSql, Type};
 use serde::ser::{Serialize, Serializer};
-use std::str::FromStr;
 
 #[derive(Clone, Debug)]
 pub enum CasVal {
@@ -47,107 +44,6 @@ impl Serialize for CasVal {
     }
   }
 }
-
-// I’m guessing that the specific mysql::Values are only populated when you
-// specify a return type. When I instantiate them simply as Value, I just get
-// Bytes, except for the NULLs.
-pub fn from_mysql_value(my_val: mysql::Value, ty: mysql::consts::ColumnType) -> CasVal {
-  match my_val {
-    mysql::Value::NULL => CasVal::Null,
-    mysql::Value::Int(_) => CasVal::Unknown,   // unused
-    mysql::Value::UInt(_) => CasVal::Unknown,  // unused
-    mysql::Value::Float(_) => CasVal::Unknown, // unused
-    mysql::Value::Date(_, _, _, _, _, _, _) => CasVal::Unknown, // unused
-    mysql::Value::Time(_, _, _, _, _, _) => CasVal::Unknown, // unused
-    mysql::Value::Bytes(bytes) => {
-      let s = String::from_utf8(bytes).unwrap();
-      match ty {
-        // Null — unused, goes to mysql::Value::Null instead
-        // ColumnType::MYSQL_TYPE_NULL
-
-        // Numerical Types
-        //// Integers can be signed or unsigned
-        ColumnType::MYSQL_TYPE_TINY => CasVal::Int32(s.parse().unwrap()),
-        ColumnType::MYSQL_TYPE_SHORT => CasVal::Int32(s.parse().unwrap()),
-        ColumnType::MYSQL_TYPE_INT24 => CasVal::Int32(s.parse().unwrap()),
-        ColumnType::MYSQL_TYPE_LONG => match i32::from_str(&s) {
-          Ok(i) => CasVal::Int32(i),
-          Err(_) => CasVal::UInt32(s.parse().unwrap()),
-        },
-        ColumnType::MYSQL_TYPE_LONGLONG => match i64::from_str(&s) {
-          Ok(i) => CasVal::Int64(i),
-          Err(_) => CasVal::UInt64(s.parse().unwrap()),
-        },
-
-        //// Floating point numbers
-        // ColumnType::MYSQL_TYPE_DECIMAL       // to do
-        // ColumnType::MYSQL_TYPE_NEWDECIMAL    // to do
-        ColumnType::MYSQL_TYPE_FLOAT => CasVal::Float32(s.parse().unwrap()),
-        ColumnType::MYSQL_TYPE_DOUBLE => CasVal::Float64(s.parse().unwrap()),
-
-        // String Types
-        ColumnType::MYSQL_TYPE_VARCHAR => CasVal::Str(s),
-
-        // Date Types
-        ColumnType::MYSQL_TYPE_TIMESTAMP => {
-          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
-          // the string looks like "2020-01-08 22:00:14"
-          // TODO: How to do this when the format isn't known...hmmm
-          // you can specify up to 6 microseconds
-          // might need a loop
-          // 2020-01-09 21:35:41
-          // 2020-01-09 21:35:41.0000
-          CasVal::Str(s)
-        }
-        // // ColumnType::MYSQL_TYPE_DATE
-        // // ColumnType::MYSQL_TYPE_TIME
-        ColumnType::MYSQL_TYPE_DATETIME => {
-          // TODO: Convert to UTC Datetime, or TZ, whichever this represents
-          // the string looks like "2020-01-08 22:00:14"
-          CasVal::Str(s)
-        }
-        // ColumnType::MYSQL_TYPE_YEAR
-        // ColumnType::MYSQL_TYPE_NEWDATE
-        // ColumnType::MYSQL_TYPE_BIT
-        // ColumnType::MYSQL_TYPE_TIMESTAMP2
-        // ColumnType::MYSQL_TYPE_DATETIME2
-        // ColumnType::MYSQL_TYPE_TIME2
-        // ColumnType::MYSQL_TYPE_JSON
-        // ColumnType::MYSQL_TYPE_ENUM
-        // ColumnType::MYSQL_TYPE_SET
-        // ColumnType::MYSQL_TYPE_TINY_BLOB
-        // ColumnType::MYSQL_TYPE_MEDIUM_BLOB
-        // ColumnType::MYSQL_TYPE_LONG_BLOB
-        ColumnType::MYSQL_TYPE_BLOB => {
-          // What's a blob???
-          CasVal::Str(s)
-        }
-        ColumnType::MYSQL_TYPE_VAR_STRING => CasVal::Str(s),
-        ColumnType::MYSQL_TYPE_STRING => CasVal::Str(s),
-        // ColumnType::MYSQL_TYPE_GEOMETRY
-        _ => {
-          eprintln!("As yet unsupported MySQL type: {:?}", ty);
-          CasVal::Str("Cascat!!!!".to_owned())
-        }
-      }
-    }
-  }
-}
-// impl From<mysql::Value> for CasVal {
-//   fn from(my_val: mysql::Value) -> Self {
-//     match my_val {
-//       mysql::Value::NULL => CasVal::Null,
-//       mysql::Value::Bytes(bytes) => CasVal::Str(String::from_utf8(bytes).unwrap()),
-//       mysql::Value::Int(i) => CasVal::Int(i),
-//       mysql::Value::UInt(u) => CasVal::Uint(u),
-//       mysql::Value::Float(f) => CasVal::Float(f),
-//       // year, month, day, hour, minutes, seconds, micro seconds
-//       // mysql::Value::Date(u16, u8, u8, u8, u8, u8, u32)
-//       // mysql::Value::Time(bool, u32, u8, u8, u8, u32)
-//       _ => CasVal::Unknown,
-//     }
-//   }
-// }
 
 impl FromSql for CasVal {
   fn from_sql(ty: &Type, raw: &[u8]) -> Result<Self, Box<dyn std::error::Error + Sync + Send>> {
