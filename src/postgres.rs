@@ -42,6 +42,6 @@ pub fn exec(query: String, conn_spec: ConnectionSpec) -> Result<(), CasErr> {
         rows.push(record);
     }
     let json = serde_json::to_string(&rows).unwrap(); // TODO
-    println!("{:?}", rows);
+    println!("{}", json);
     Ok(())
 }

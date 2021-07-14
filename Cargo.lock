@@ -65,12 +65,13 @@ dependencies = [
  "chrono",
  "clap",
  "directories",
+ "geo-types",
  "postgres",
  "serde",
  "serde_derive",
  "serde_json",
  "toml",
- "uuid 0.5.1",
+ "uuid",
 ]
 
 [[package]]
@@ -550,11 +551,10 @@ dependencies = [
  "bytes",
  "chrono",
  "fallible-iterator",
- "geo-types",
  "postgres-protocol",
  "serde",
  "serde_json",
- "uuid 0.8.2",
+ "uuid",
 ]
 
 [[package]]
@@ -935,12 +935,6 @@ name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "826e7639553986605ec5979c7dd957c7895e93eabed50ab2ffa7f6128a75097c"
-
-[[package]]
-name = "uuid"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcc7e3b898aa6f6c08e5295b6c89258d1331e9ac578cc992fb818759951bdc22"
 
 [[package]]
 name = "uuid"

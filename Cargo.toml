@@ -7,14 +7,15 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4"
+chrono = "0.4.19"
 directories = "3.0.2"
-postgres = { version = "0.19.1", features = ["with-chrono-0_4", "with-uuid-0_8", "with-serde_json-1", "with-geo-types-0_7"] }
+geo-types = "0.7.0"
+postgres = { version = "0.19.1", features = ["with-chrono-0_4", "with-uuid-0_8", "with-serde_json-1"] }
 serde = "1.0.126"
 serde_json = "1.0.64"
 serde_derive = "1.0.126"
 toml = "0.5.8"
-uuid = "0.5"
+uuid = "0.8.2"
 
 [dependencies.clap]
 version = "3.0.0-beta.1"
