@@ -27,7 +27,7 @@ impl FromSql<'_> for CasVal {
             }
             &types::Type::TEXT => {
                 let x: String = FromSql::from_sql(ty, raw)?;
-                CasVal::Str(x)
+                serde_json::from_str(x.as_str()).map_or(CasVal::Str(x), CasVal::Json)
             }
             &types::Type::VARCHAR => {
                 let x: String = FromSql::from_sql(ty, raw)?;
