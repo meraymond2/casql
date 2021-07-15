@@ -1,14 +1,9 @@
 use chrono::{DateTime, Local, Utc};
 use postgres::types;
 use postgres::types::{FromSql, Type};
-use serde::ser::{Serialize, Serializer};
 use serde_derive::Serialize;
 
-// This level of indirection may only make sense if there are multiple dbs.
-// Otherwise, why not just map Postgres values to strings directly?
-// I can only implement FromSQL for my own enum, but is it worth distinguishing
-// beteween types before serializng?
-#[derive(Clone, Debug, Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(untagged)]
 pub enum CasVal {
     Str(String),
@@ -16,8 +11,6 @@ pub enum CasVal {
     Bool(bool),
     Int32(i32),
     Int64(i64),
-    UInt32(u32),
-    UInt64(u64),
     Float32(f32),
     Float64(f64),
     Json(serde_json::Value),
@@ -41,7 +34,7 @@ impl FromSql<'_> for CasVal {
                 CasVal::Str(x)
             }
             &types::Type::TIMESTAMP => {
-            // todo: make not utc but non-timestamped datetime string, i.e. lose the Z
+                // todo: make not utc but non-timestamped datetime string, i.e. lose the Z
                 let x: DateTime<Utc> = FromSql::from_sql(ty, raw)?;
                 CasVal::Str(x.to_string())
             }

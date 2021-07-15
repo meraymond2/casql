@@ -14,7 +14,6 @@ pub enum CasErr {
     NoHomeDir,
     UnknownIO(String),
     UnknownSQL(String),
-    Unreachable,
 }
 
 impl error::Error for CasErr {}
@@ -66,7 +65,6 @@ impl fmt::Display for CasErr {
             CasErr::NoHomeDir => write!(f, "error: Could not determine user’s home directory"),
             CasErr::UnknownIO(reason) => write!(f, "error: There was an unexpected IO error: {}", reason),
             CasErr::UnknownSQL(reason) => write!(f, "error: There was a problem connecting to the database: {}", reason),
-            CasErr::Unreachable => write!(f, ""),
         }
     }
 }
