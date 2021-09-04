@@ -1,9 +1,9 @@
+use crate::postgres::backend::{type_of, BackendMsg};
 use crate::postgres::frontend;
 use crate::postgres::msg_iter::MsgIter;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
-use crate::postgres::backend::{deserialise, BackendMsg};
 
 pub struct ConnectionParams {
     pub host: String,
@@ -24,8 +24,26 @@ impl Conn {
         stream
             .set_read_timeout(Some(Duration::from_millis(1)))
             .unwrap();
-        stream.write(frontend::startup_msg(params.user, params.database, 3, 0).as_slice())?;
-        let msgs = MsgIter::new(&mut stream);
+
+        stream
+            .write(frontend::startup_msg(params.user, params.database, 3, 0).as_slice())
+            .unwrap();
+
+        MsgIter::new(&mut stream).for_each(|msg| match type_of(&msg) {
+            BackendMsg::AuthenticationCleartextPassword => {
+                println!("Need to send password.");
+            }
+            BackendMsg::AuthenticationMD5Password => {
+                println!("Need to send MD5 password.");
+            }
+            BackendMsg::AuthenticationOk => {}
+            _ => {}
+        });
+
+        MsgIter::new(&mut stream).for_each(|msg| match type_of(&msg) {
+            t => println!("{:?}", t),
+        });
+
         Ok(Conn { stream })
     }
 }

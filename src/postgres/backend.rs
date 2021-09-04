@@ -1,6 +1,7 @@
+#[derive(Debug)]
 pub enum BackendMsg {
     AuthenticationCleartextPassword,
-    AuthenticationMD5Password([u8; 4]),
+    AuthenticationMD5Password,
     AuthenticationOk,
     // BackendKeyData,
     // BindComplete,
@@ -11,24 +12,21 @@ pub enum BackendMsg {
     // ParameterDescription,
     // ParameterStatus,
     // ParseComplete,
-    // ReadyForQuery,
+    ReadyForQuery,
     // RowDescription,
 }
 
 const R: u8 = 82;
 
-pub fn deserialise(bytes: &[u8]) -> BackendMsg {
+/// Identify the message type, without parsing the entire message.
+pub fn type_of(bytes: &[u8]) -> BackendMsg {
     match bytes[0] {
         R => match bytes[8] {
             0 => BackendMsg::AuthenticationOk,
             3 => BackendMsg::AuthenticationCleartextPassword,
-            5 => {
-                let mut salt: [u8; 4] = [0; 4];
-                salt.copy_from_slice(&bytes[9..13]);
-                BackendMsg::AuthenticationMD5Password(salt)
-            },
-            _ => unimplemented!("aaah"),
+            5 => BackendMsg::AuthenticationMD5Password,
+            _ => unimplemented!("R {}", bytes[8]),
         },
-        other => unimplemented!("aaaaah {}", other),
+        _ => unimplemented!("{}", bytes[0]),
     }
 }
