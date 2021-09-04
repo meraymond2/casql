@@ -18,6 +18,11 @@ pub fn startup_msg(
     )
 }
 
+pub fn password_msg(password: String) -> Vec<u8> {
+    let p = 112;
+    serialise_msg(Some(p), vec![MsgField::CStr(password)])
+}
+
 enum MsgField {
     Int8(i8),
     Int16(i16),

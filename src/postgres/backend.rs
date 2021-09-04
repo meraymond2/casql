@@ -8,7 +8,7 @@ pub enum BackendMsg {
     // Close,
     // DataRow,
     // EmptyQueryResponse,
-    // ErrorResponse,
+    ErrorResponse,
     // ParameterDescription,
     // ParameterStatus,
     // ParseComplete,
@@ -16,11 +16,13 @@ pub enum BackendMsg {
     // RowDescription,
 }
 
+const E: u8 = 69;
 const R: u8 = 82;
 
 /// Identify the message type, without parsing the entire message.
 pub fn type_of(bytes: &[u8]) -> BackendMsg {
     match bytes[0] {
+        E => BackendMsg::ErrorResponse,
         R => match bytes[8] {
             0 => BackendMsg::AuthenticationOk,
             3 => BackendMsg::AuthenticationCleartextPassword,

@@ -21,24 +21,10 @@ impl<'stream> MsgIter<'stream> {
         }
     }
 
-    fn read_bytes(&mut self) -> Result<(), std::io::Error> {
-        match self.stream.read(&mut self.buf) {
-            Ok(bytes_read) => {
-                self.len = bytes_read;
-                self.pos = 0;
-                Ok(())
-            }
-            Err(error) => match error.kind() {
-                // We want to read until Postgres has stopped sending data, but cannot rely on the
-                // message length alone, because I can’t predict how many messages there will be.
-                std::io::ErrorKind::WouldBlock => {
-                    self.len = 0;
-                    self.pos = 0;
-                    Ok(())
-                }
-                _ => Err(error),
-            },
-        }
+    fn read_bytes(&mut self) {
+        let bytes_read = self.stream.read(&mut self.buf).unwrap();
+        self.len = bytes_read;
+        self.pos = 0;
     }
 
     fn copy_msg_bytes(&mut self, msg: &mut Vec<u8>, bytes_to_copy: usize) {
@@ -51,7 +37,7 @@ impl<'stream> MsgIter<'stream> {
             } else {
                 msg.extend_from_slice(&self.buf[self.pos..self.len]);
                 n = n - (self.len - self.pos);
-                self.read_bytes().unwrap();
+                self.read_bytes();
             }
         }
     }
@@ -62,14 +48,13 @@ impl<'stream> Iterator for MsgIter<'stream> {
 
     fn next(&mut self) -> Option<Self::Item> {
         // 1. We either haven’t started, or finished the previous message exactly at the end of the
-        // buffer. If there is no more to read, return None, else read more bytes and start over.
+        // buffer. Read more bytes, and start over, or return None if there are no bytes to be read.
         if self.pos == self.len {
-            // read
-            self.read_bytes().unwrap();
-            if self.len > 0 {
-                self.next()
-            } else {
+            self.read_bytes();
+            if self.len == 0 {
                 None
+            } else {
+                self.next()
             }
         } else if self.len - self.pos > 5 {
             // 2. There are bytes to read, and at least enough in the buffer to get the message length.
@@ -92,7 +77,7 @@ impl<'stream> Iterator for MsgIter<'stream> {
                 .enumerate()
                 .for_each(|(idx, byte)| len_bytes[idx] = *byte);
             let copied = self.len - self.pos;
-            self.read_bytes().unwrap();
+            self.read_bytes();
             self.buf[self.pos..(4 - copied)]
                 .iter()
                 .enumerate()

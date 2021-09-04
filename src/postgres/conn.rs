@@ -1,6 +1,7 @@
 use crate::postgres::backend::{type_of, BackendMsg};
 use crate::postgres::frontend;
 use crate::postgres::msg_iter::MsgIter;
+use std::hint::unreachable_unchecked;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
@@ -14,36 +15,85 @@ pub struct ConnectionParams {
 }
 
 pub struct Conn {
+    state: ConnectionState,
     stream: TcpStream,
 }
 
 impl Conn {
     pub fn connect(params: ConnectionParams) -> Result<Self, std::io::Error> {
-        let mut stream =
-            TcpStream::connect(format!("{}:{}", params.host, params.port.unwrap_or(5432)))?;
-        stream
-            .set_read_timeout(Some(Duration::from_millis(1)))
-            .unwrap();
+        let mut conn = Conn {
+            state: ConnectionState::Uninitialised,
+            stream: TcpStream::connect(format!("{}:{}", params.host, params.port.unwrap_or(5432)))
+                .unwrap(),
+        };
 
-        stream
-            .write(frontend::startup_msg(params.user, params.database, 3, 0).as_slice())
-            .unwrap();
-
-        MsgIter::new(&mut stream).for_each(|msg| match type_of(&msg) {
-            BackendMsg::AuthenticationCleartextPassword => {
-                println!("Need to send password.");
+        conn.send_startup(params.user, params.database);
+        match conn.state {
+            ConnectionState::PasswordRequestedCleartext => {
+                conn.send_password(params.password.unwrap_or(String::from("")));
             }
-            BackendMsg::AuthenticationMD5Password => {
-                println!("Need to send MD5 password.");
+            ConnectionState::PasswordRequestedMd5 => {
+                conn.send_password(params.password.unwrap_or(String::from("")));
             }
-            BackendMsg::AuthenticationOk => {}
-            _ => {}
-        });
-
-        MsgIter::new(&mut stream).for_each(|msg| match type_of(&msg) {
-            t => println!("{:?}", t),
-        });
-
-        Ok(Conn { stream })
+            ConnectionState::ReadyForQuery => {}
+            ConnectionState::Uninitialised => unreachable!(),
+        }
+        Ok(conn)
     }
+
+    fn send_startup(&mut self, user: String, database: Option<String>) {
+        self.stream
+            .write(&frontend::startup_msg(user, database, 3, 0))
+            .unwrap();
+        let mut msgs = MsgIter::new(&mut self.stream);
+        while let Some(msg) = msgs.next() {
+            match type_of(&msg) {
+                BackendMsg::AuthenticationCleartextPassword => {
+                    self.state = ConnectionState::PasswordRequestedCleartext;
+                    break;
+                }
+                BackendMsg::AuthenticationMD5Password => {
+                    self.state = ConnectionState::PasswordRequestedMd5;
+                    break;
+                }
+                BackendMsg::AuthenticationOk => {}
+                BackendMsg::ErrorResponse => {
+                    todo!("handle postgres errors");
+                }
+                BackendMsg::ReadyForQuery => {
+                    self.state = ConnectionState::ReadyForQuery;
+                    break;
+                }
+            }
+        }
+    }
+
+    fn send_password(&mut self, password: String) {
+        self.stream
+            .write(&frontend::password_msg(password))
+            .unwrap();
+        let mut msgs = MsgIter::new(&mut self.stream);
+        while let Some(msg) = msgs.next() {
+            match type_of(&msg) {
+                BackendMsg::ErrorResponse => {
+                    todo!("handle postgres errors");
+                }
+                BackendMsg::ReadyForQuery => {
+                    self.state = ConnectionState::ReadyForQuery;
+                    break;
+                }
+                _ => {
+                    println!("{:?}", msg);
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+enum ConnectionState {
+    PasswordRequestedCleartext,
+    PasswordRequestedMd5,
+    ReadyForQuery,
+    Uninitialised,
 }
