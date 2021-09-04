@@ -10,7 +10,7 @@ pub enum BackendMsg {
     // EmptyQueryResponse,
     ErrorResponse,
     // ParameterDescription,
-    // ParameterStatus,
+    ParameterStatus,
     // ParseComplete,
     ReadyForQuery,
     // RowDescription,
@@ -18,6 +18,7 @@ pub enum BackendMsg {
 
 const E: u8 = 69;
 const R: u8 = 82;
+const S: u8 = 83;
 
 /// Identify the message type, without parsing the entire message.
 pub fn type_of(bytes: &[u8]) -> BackendMsg {
@@ -29,6 +30,7 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
             5 => BackendMsg::AuthenticationMD5Password,
             _ => unimplemented!("R {}", bytes[8]),
         },
+        S => BackendMsg::ParameterStatus,
         _ => unimplemented!("{}", bytes[0]),
     }
 }

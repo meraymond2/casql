@@ -5,4 +5,4 @@ authors = []
 edition = "2018"
 
 [dependencies]
-
+md5 = "0.7.0"

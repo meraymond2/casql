@@ -1,6 +1,7 @@
 use crate::postgres::backend::{type_of, BackendMsg};
 use crate::postgres::frontend;
 use crate::postgres::msg_iter::MsgIter;
+use std::convert::TryInto;
 use std::hint::unreachable_unchecked;
 use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
@@ -27,17 +28,21 @@ impl Conn {
                 .unwrap(),
         };
 
-        conn.send_startup(params.user, params.database);
+        conn.send_startup(params.user.clone(), params.database);
+        println!("One");
         match conn.state {
             ConnectionState::PasswordRequestedCleartext => {
                 conn.send_password(params.password.unwrap_or(String::from("")));
             }
-            ConnectionState::PasswordRequestedMd5 => {
-                conn.send_password(params.password.unwrap_or(String::from("")));
+            ConnectionState::PasswordRequestedMd5(salt) => {
+                let password = params.password.unwrap_or(String::from(""));
+                let hashed_pass = md5_password(&params.user, &password, salt);
+                conn.send_password(hashed_pass);
             }
             ConnectionState::ReadyForQuery => {}
             ConnectionState::Uninitialised => unreachable!(),
         }
+        println!("Two");
         Ok(conn)
     }
 
@@ -53,17 +58,18 @@ impl Conn {
                     break;
                 }
                 BackendMsg::AuthenticationMD5Password => {
-                    self.state = ConnectionState::PasswordRequestedMd5;
+                    let salt: [u8; 4] = msg[9..13].try_into().unwrap();
+                    self.state = ConnectionState::PasswordRequestedMd5(salt);
                     break;
                 }
-                BackendMsg::AuthenticationOk => {}
                 BackendMsg::ErrorResponse => {
                     todo!("handle postgres errors");
                 }
                 BackendMsg::ReadyForQuery => {
                     self.state = ConnectionState::ReadyForQuery;
                     break;
-                }
+                },
+                _ => {}
             }
         }
     }
@@ -93,7 +99,32 @@ impl Conn {
 #[derive(Debug)]
 enum ConnectionState {
     PasswordRequestedCleartext,
-    PasswordRequestedMd5,
+    PasswordRequestedMd5([u8; 4]),
     ReadyForQuery,
     Uninitialised,
+}
+
+// Cheerfully stolen from rust-postgres (https://github.com/sfackler/rust-postgres).
+fn md5_password(user: &str, password: &str, salt: [u8; 4]) -> String {
+    let mut context = md5::Context::new();
+    context.consume(password);
+    context.consume(user);
+    let output = context.compute();
+    context = md5::Context::new();
+    context.consume(format!("{:x}", output));
+    context.consume(&salt);
+    format!("md5{:x}", context.compute())
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::postgres::conn::md5_password;
+
+    #[test]
+    fn test_md5() {
+        assert_eq!(
+            "md5ced873c22ed2ff40045eec5872ad4ea0",
+            md5_password("michael", "cascat", [0x81, 0x4F, 0xA3, 0x5A])
+        );
+    }
 }
