@@ -78,10 +78,12 @@ impl<'stream> Iterator for MsgIter<'stream> {
                 .for_each(|(idx, byte)| len_bytes[idx] = *byte);
             let copied = self.len - self.pos;
             self.read_bytes();
-            self.buf[self.pos..(4 - copied)]
+            let remaining = 4 - copied;
+            self.buf[self.pos..remaining]
                 .iter()
                 .enumerate()
                 .for_each(|(idx, byte)| len_bytes[copied + idx] = *byte);
+            self.pos = self.pos + remaining;
             let msg_len = i32::from_be_bytes(len_bytes) as usize;
 
             let mut msg = Vec::with_capacity(msg_len + 1);
