@@ -15,6 +15,7 @@ pub struct ConnectionParams {
     pub port: Option<u16>,
 }
 
+#[derive(Debug)]
 pub struct Conn {
     state: ConnectionState,
     stream: TcpStream,
@@ -29,7 +30,6 @@ impl Conn {
         };
 
         conn.send_startup(params.user.clone(), params.database);
-        println!("One");
         match conn.state {
             ConnectionState::PasswordRequestedCleartext => {
                 conn.send_password(params.password.unwrap_or(String::from("")));
@@ -42,8 +42,20 @@ impl Conn {
             ConnectionState::ReadyForQuery => {}
             ConnectionState::Uninitialised => unreachable!(),
         }
-        println!("Two");
         Ok(conn)
+    }
+
+    pub fn query(&mut self, query: String, params: Vec<String>) {
+        self.stream.write(&frontend::parse_msg(&query)).unwrap();
+        self.stream.write(&frontend::describe_msg()).unwrap();
+        self.stream.write(&frontend::bind_msg(params)).unwrap();
+        self.stream.write(&frontend::execute_msg()).unwrap();
+        self.stream.write(&frontend::sync_msg()).unwrap();
+        let mut msgs = MsgIter::new(&mut self.stream);
+        while let Some(msg) = msgs.next() {
+            println!("{:?}", msg);
+            // TODO: do something with messages?
+        }
     }
 
     fn send_startup(&mut self, user: String, database: Option<String>) {
@@ -68,7 +80,7 @@ impl Conn {
                 BackendMsg::ReadyForQuery => {
                     self.state = ConnectionState::ReadyForQuery;
                     break;
-                },
+                }
                 _ => {}
             }
         }
@@ -88,9 +100,7 @@ impl Conn {
                     self.state = ConnectionState::ReadyForQuery;
                     break;
                 }
-                _ => {
-                    println!("{:?}", msg);
-                }
+                _ => {}
             }
         }
     }

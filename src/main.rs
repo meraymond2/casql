@@ -11,5 +11,8 @@ fn main() -> std::io::Result<()> {
         password: Some("cascat".to_owned()),
     };
     let mut conn = Conn::connect(params);
+    if let Ok(mut c) = conn {
+        c.query(String::from("SELECT * FROM pg_type"), vec![]);
+    }
     Ok(())
 }
