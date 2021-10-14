@@ -31,7 +31,7 @@ impl<'stream> MsgIter<'stream> {
         let mut n = bytes_to_copy;
         while n > 0 {
             if n <= self.len - self.pos {
-                msg.extend_from_slice(&self.buf[self.pos..n]);
+                msg.extend_from_slice(&self.buf[self.pos..(self.pos + n)]);
                 self.pos = self.pos + n;
                 n = 0;
             } else {
