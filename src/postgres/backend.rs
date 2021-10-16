@@ -4,37 +4,37 @@ pub enum BackendMsg {
     AuthenticationMD5Password,
     AuthenticationOk,
     BackendKeyData,
-    // BindComplete,
-    // Close,
-    // DataRow,
+    BindComplete,
+    Close,
+    DataRow,
     // EmptyQueryResponse,
     ErrorResponse,
-    // ParameterDescription,
+    ParameterDescription,
     ParameterStatus,
-    // ParseComplete,
+    ParseComplete,
     ReadyForQuery,
-    // RowDescription,
+    RowDescription,
 }
-
-const E: u8 = 69;
-const K: u8 = 75;
-const R: u8 = 82;
-const S: u8 = 83;
-const Z: u8 = 90;
 
 /// Identify the message type, without parsing the entire message.
 pub fn type_of(bytes: &[u8]) -> BackendMsg {
     match bytes[0] {
-        E => BackendMsg::ErrorResponse,
-        K => BackendMsg::BackendKeyData,
-        R => match bytes[8] {
-            0 => BackendMsg::AuthenticationOk,
-            3 => BackendMsg::AuthenticationCleartextPassword,
-            5 => BackendMsg::AuthenticationMD5Password,
+        0x31 => BackendMsg::ParseComplete,
+        0x32 => BackendMsg::BindComplete,
+        0x43 => BackendMsg::Close,
+        0x44 => BackendMsg::DataRow,
+        0x45 => BackendMsg::ErrorResponse,
+        0x4B => BackendMsg::BackendKeyData,
+        0x52 => match bytes[8] {
+            0x00 => BackendMsg::AuthenticationOk,
+            0x03 => BackendMsg::AuthenticationCleartextPassword,
+            0x05 => BackendMsg::AuthenticationMD5Password,
             _ => unimplemented!("R {}", bytes[8]),
         },
-        S => BackendMsg::ParameterStatus,
-        Z => BackendMsg::ReadyForQuery,
+        0x53 => BackendMsg::ParameterStatus,
+        0x54 => BackendMsg::RowDescription,
+        0x5A => BackendMsg::ReadyForQuery,
+        0x74 => BackendMsg::ParameterDescription,
         _ => unimplemented!("{}", bytes[0]),
     }
 }

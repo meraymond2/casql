@@ -53,7 +53,9 @@ impl Conn {
         self.stream.write(&frontend::sync_msg()).unwrap();
         let mut msgs = MsgIter::new(&mut self.stream);
         while let Some(msg) = msgs.next() {
-            println!("{:?}", msg);
+            println!("{:?}", type_of(&msg));
+            // println!("{:?}", msg);
+
             // TODO: do something with messages?
         }
     }

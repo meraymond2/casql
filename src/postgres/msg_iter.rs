@@ -2,7 +2,7 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::time::Duration;
 
-const BUFFER_SIZE: usize = 5;
+const BUFFER_SIZE: usize = 20;
 
 pub struct MsgIter<'stream> {
     stream: &'stream mut TcpStream,
@@ -59,8 +59,8 @@ impl<'stream> Iterator for MsgIter<'stream> {
         } else if self.len - self.pos > 5 {
             // 2. There are bytes to read, and at least enough in the buffer to get the message length.
             let mut len_bytes: [u8; 4] = [0; 4];
-            len_bytes.copy_from_slice(&self.buf[(self.pos + 1)..self.pos + 5]);
-            let msg_len = i32::from_be_bytes(len_bytes); // can I simplify this to one line? // technically i32
+            len_bytes.copy_from_slice(&self.buf[(self.pos + 1)..(self.pos + 5)]);
+            let msg_len = i32::from_be_bytes(len_bytes);
             let to_copy = 1 + msg_len as usize;
             let mut msg = Vec::with_capacity(to_copy);
             self.copy_msg_bytes(&mut msg, to_copy);
