@@ -1,4 +1,5 @@
-use crate::postgres::backend::{type_of, BackendMsg};
+use crate::postgres::backend;
+use crate::postgres::backend::{BackendMsg};
 use crate::postgres::frontend;
 use crate::postgres::msg_iter::MsgIter;
 use std::convert::TryInto;
@@ -52,11 +53,28 @@ impl Conn {
         self.stream.write(&frontend::execute_msg()).unwrap();
         self.stream.write(&frontend::sync_msg()).unwrap();
         let mut msgs = MsgIter::new(&mut self.stream);
+        let mut row_count: usize = 0;
         while let Some(msg) = msgs.next() {
-            println!("{:?}", type_of(&msg));
-            // println!("{:?}", msg);
-
-            // TODO: do something with messages?
+            match backend::type_of(&msg) {
+                BackendMsg::ReadyForQuery => {
+                    println!("Done! {} rows", row_count);
+                    break;
+                }
+                BackendMsg::RowDescription => {
+                    println!("{:?}", backend::parse_row_desc(msg));
+                    println!("Row Desc here");
+                },
+                BackendMsg::DataRow => {
+                    row_count += 1;
+                }
+                BackendMsg::ErrorResponse => {} // TODO
+                // BackendMsg::BindComplete => {}
+                // BackendMsg::Close => {}
+                // BackendMsg::ParameterDescription => {}
+                // BackendMsg::ParameterStatus => {}
+                // BackendMsg::ParseComplete => {},
+                _ => {}
+            }
         }
     }
 
@@ -66,7 +84,7 @@ impl Conn {
             .unwrap();
         let mut msgs = MsgIter::new(&mut self.stream);
         while let Some(msg) = msgs.next() {
-            match type_of(&msg) {
+            match backend::type_of(&msg) {
                 BackendMsg::AuthenticationCleartextPassword => {
                     self.state = ConnectionState::PasswordRequestedCleartext;
                     break;
@@ -94,7 +112,7 @@ impl Conn {
             .unwrap();
         let mut msgs = MsgIter::new(&mut self.stream);
         while let Some(msg) = msgs.next() {
-            match type_of(&msg) {
+            match backend::type_of(&msg) {
                 BackendMsg::ErrorResponse => {
                     todo!("handle postgres errors");
                 }

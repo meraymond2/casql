@@ -38,3 +38,76 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
         _ => unimplemented!("{}", bytes[0]),
     }
 }
+
+#[derive(Debug)]
+pub struct Field {
+    name: String,
+    data_type_oid: i32,
+}
+
+pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
+    let mut msg = BinaryMsg::from(bytes);
+    // skip discriminator and message size
+    msg.skip(5);
+    let field_count = msg.i16();
+    let mut fields = Vec::with_capacity(field_count as usize);
+
+    for _ in 0..field_count {
+        let name = msg.c_str();
+        // skip table_oid (i32) and column (i16)
+        msg.skip(6);
+        let data_type_oid = msg.i32();
+        // skip data_type_size (i16), type_modifier (i32) and format_code (i16)
+        msg.skip(8);
+        fields.push({
+            Field {
+                name,
+                data_type_oid,
+            }
+        })
+    }
+    fields
+}
+
+struct BinaryMsg {
+    bytes: Vec<u8>,
+    pos: usize,
+}
+
+impl BinaryMsg {
+    fn from(bytes: Vec<u8>) -> Self {
+        BinaryMsg { bytes, pos: 0 }
+    }
+
+    fn skip(&mut self, n: usize) {
+        self.pos = self.pos + n;
+    }
+
+    fn i16(&mut self) -> i16 {
+        let mut byte_arr: [u8; 2] = [0; 2];
+        byte_arr.copy_from_slice(&self.bytes[(self.pos)..(self.pos + 2)]);
+        let n = i16::from_be_bytes(byte_arr);
+        self.pos += 2;
+        n
+    }
+
+    fn i32(&mut self) -> i32 {
+        let mut byte_arr: [u8; 4] = [0; 4];
+        byte_arr.copy_from_slice(&self.bytes[(self.pos)..(self.pos + 4)]);
+        let n = i32::from_be_bytes(byte_arr);
+        self.pos += 4;
+        n
+    }
+
+    fn c_str(&mut self) -> String {
+        let start = self.pos;
+        while self.bytes[self.pos] != 0x00 {
+            self.pos += 1
+        }
+        let s = std::str::from_utf8(&self.bytes[start..self.pos])
+            .unwrap()
+            .to_owned();
+        self.skip(1); // skip the null terminator
+        s
+    }
+}

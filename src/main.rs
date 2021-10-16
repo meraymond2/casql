@@ -12,7 +12,8 @@ fn main() -> std::io::Result<()> {
     };
     let mut conn = Conn::connect(params);
     if let Ok(mut c) = conn {
-        c.query(String::from("SELECT * FROM pg_type LIMIT 3"), vec![]);
+        c.query(String::from("SELECT * FROM pg_type"), vec![]);
+        // c.query(String::from("SELECT * FROM pg_type"), vec![]);
     }
     Ok(())
 }
