@@ -1,6 +1,5 @@
 use std::io::Read;
 use std::net::TcpStream;
-use std::time::Duration;
 
 const BUFFER_SIZE: usize = 20;
 

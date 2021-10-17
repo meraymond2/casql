@@ -10,10 +10,10 @@ fn main() -> std::io::Result<()> {
         host: "localhost".to_owned(),
         password: Some("cascat".to_owned()),
     };
-    let mut conn = Conn::connect(params);
+    let conn = Conn::connect(params);
     if let Ok(mut c) = conn {
+        // c.query(String::from("SELECT * FROM pg_type LIMIT 10"), vec![]);
         c.query(String::from("SELECT * FROM pg_type"), vec![]);
-        // c.query(String::from("SELECT * FROM pg_type"), vec![]);
     }
     Ok(())
 }

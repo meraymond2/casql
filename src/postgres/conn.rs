@@ -1,12 +1,11 @@
 use crate::postgres::backend;
-use crate::postgres::backend::{BackendMsg};
+use crate::postgres::backend::BackendMsg;
 use crate::postgres::frontend;
+use crate::postgres::json_writer::write_json_rows;
 use crate::postgres::msg_iter::MsgIter;
 use std::convert::TryInto;
-use std::hint::unreachable_unchecked;
-use std::io::{Read, Write};
-use std::net::{SocketAddr, TcpStream};
-use std::time::Duration;
+use std::io::Write;
+use std::net::TcpStream;
 
 pub struct ConnectionParams {
     pub host: String,
@@ -53,29 +52,7 @@ impl Conn {
         self.stream.write(&frontend::execute_msg()).unwrap();
         self.stream.write(&frontend::sync_msg()).unwrap();
         let mut msgs = MsgIter::new(&mut self.stream);
-        let mut row_count: usize = 0;
-        while let Some(msg) = msgs.next() {
-            match backend::type_of(&msg) {
-                BackendMsg::ReadyForQuery => {
-                    println!("Done! {} rows", row_count);
-                    break;
-                }
-                BackendMsg::RowDescription => {
-                    println!("{:?}", backend::parse_row_desc(msg));
-                    println!("Row Desc here");
-                },
-                BackendMsg::DataRow => {
-                    row_count += 1;
-                }
-                BackendMsg::ErrorResponse => {} // TODO
-                // BackendMsg::BindComplete => {}
-                // BackendMsg::Close => {}
-                // BackendMsg::ParameterDescription => {}
-                // BackendMsg::ParameterStatus => {}
-                // BackendMsg::ParseComplete => {},
-                _ => {}
-            }
-        }
+        write_json_rows(&mut msgs);
     }
 
     fn send_startup(&mut self, user: String, database: Option<String>) {

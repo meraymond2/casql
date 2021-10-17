@@ -41,8 +41,8 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
 
 #[derive(Debug)]
 pub struct Field {
-    name: String,
-    data_type_oid: i32,
+    pub name: String,
+    pub data_type_oid: i32,
 }
 
 pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
