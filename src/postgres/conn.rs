@@ -51,8 +51,8 @@ impl Conn {
         self.stream.write(&frontend::bind_msg(params)).unwrap();
         self.stream.write(&frontend::execute_msg()).unwrap();
         self.stream.write(&frontend::sync_msg()).unwrap();
-        let mut msgs = MsgIter::new(&mut self.stream);
-        write_json_rows(&mut msgs);
+        let mut resp = MsgIter::new(&mut self.stream);
+        write_json_rows(&mut resp);
     }
 
     fn send_startup(&mut self, user: String, database: Option<String>) {
