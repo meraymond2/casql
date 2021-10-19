@@ -10,13 +10,8 @@ Given an iterator containing the raw Postgres responses from the query, we need 
 RowDescription — which will tell us the field names and types for each value — and then parse the
 DataRows, serialise them as JSON, and write them to the output.
 
-It would perhaps be more elegant to model this as a series of transformations on the message
-iterator, parsing the binary message to a struct, parsing the values within that struct, serialising
-the values to JSON and finally writing it the output.
-
-However, in order to minimise copying of data, I’m preferring a unidirectional flow, which will
-allow me to copy directly from the response buffer to stdout, without complicated lifetimes. It
-would make it harder to test, had any intention of writing unit tests.
+This could also be modelled as a series of transformations on the message iterator, but the result
+isn’t any easier to read, so I’ve kept it quite imperative.
 
 The messages arrive from Postgres in the following order:
 ParseComplete
@@ -32,11 +27,10 @@ ReadyForQuery
 pub fn write_json_rows(msgs: &mut MsgIter) {
     let stdout = std::io::stdout();
     let handle = stdout.lock();
-    let out = std::io::BufWriter::new(handle);
-    let mut writer = JsonWriter { out };
+    let mut out = std::io::BufWriter::new(handle);
     let mut first = true;
 
-    writer.left_square_bracket();
+    out.write(LEFT_BRACKET).unwrap();
 
     while let Some(msg) = msgs.next() {
         match backend::type_of(&msg) {
@@ -52,9 +46,9 @@ pub fn write_json_rows(msgs: &mut MsgIter) {
                             if first {
                                 first = false;
                             } else {
-                                writer.comma();
+                                out.write(COMMA).unwrap();
                             }
-                            write_row(msg, &fields, &mut writer);
+                            write_row(msg, &fields, &mut out);
                         }
                         BackendMsg::Close => {}
                         BackendMsg::ReadyForQuery => {
@@ -72,19 +66,20 @@ pub fn write_json_rows(msgs: &mut MsgIter) {
             }
         }
     }
-    writer.right_square_bracket();
-    writer.end();
+    out.write(RIGHT_BRACKET).unwrap();
+    out.write(NEW_LINE).unwrap();
+    out.flush().unwrap();
 }
 
-/// Write row as JSON object, where row is the bytes representing a DataRow Postgres message.
-fn write_row<T>(row: Vec<u8>, fields: &Vec<Field>, writer: &mut JsonWriter<T>)
+/// Write DataRow message as a JSON object.
+fn write_row<T>(row: Vec<u8>, fields: &Vec<Field>, out: &mut T)
 where
     T: Write,
 {
     let value_count = i16::from_be_bytes([row[5], row[6]]) as usize;
     let mut pos = 7; // skip discriminator (u8), msg length (i32) and value count (i32)
 
-    writer.left_curly();
+    out.write(LEFT_BRACE).unwrap();
 
     for idx in 0..value_count {
         let val_len = i32::from_be_bytes([row[pos], row[pos + 1], row[pos + 2], row[pos + 3]]);
@@ -99,87 +94,65 @@ where
             pos += len;
             Some(val_bytes)
         };
-        writer.key_value(field, value);
+        write_key_value(field, value, out);
 
         if idx < value_count - 1 {
-            writer.comma();
+            out.write(COMMA).unwrap();
         }
     }
 
-    writer.right_curly();
+    out.write(RIGHT_BRACE).unwrap();
 }
 
-struct JsonWriter<Out> {
-    out: Out,
-}
-
-impl<Out> JsonWriter<Out>
+fn write_key_value<T>(field: &Field, value: Option<&[u8]>, out: &mut T)
 where
-    Out: Write,
+    T: Write,
 {
-    fn key_value(&mut self, field: &Field, value: Option<&[u8]>) {
-        self.string(field.name.as_bytes());
-        self.out.write(":".as_bytes()).unwrap();
-        match value {
-            Some(v) => {
-                self.value(v, field.data_type_oid);
-            }
-            None => {
-                self.out.write("null".as_bytes()).unwrap();
-            }
+    out.write(QUOTE).unwrap();
+    out.write(field.name.as_bytes()).unwrap();
+    out.write(QUOTE).unwrap();
+    out.write(COLON).unwrap();
+    match value {
+        Some(v) => write_value(v, field.data_type_oid, out),
+        None => {
+            out.write("null".as_bytes()).unwrap();
         }
     }
+}
 
-    fn string(&mut self, s: &[u8]) {
-        self.out.write("\"".as_bytes()).unwrap();
-        self.out.write(s).unwrap();
-        self.out.write("\"".as_bytes()).unwrap();
-    }
-
-    fn left_square_bracket(&mut self) {
-        self.out.write("[".as_bytes()).unwrap();
-    }
-
-    fn right_square_bracket(&mut self) {
-        self.out.write("]".as_bytes()).unwrap();
-    }
-
-    fn left_curly(&mut self) {
-        self.out.write("{".as_bytes()).unwrap();
-    }
-
-    fn right_curly(&mut self) {
-        self.out.write("}".as_bytes()).unwrap();
-    }
-
-    fn comma(&mut self) {
-        self.out.write(",".as_bytes()).unwrap();
-    }
-
-    fn end(&mut self) {
-        self.out.write("\n".as_bytes()).unwrap();
-        self.out.flush().unwrap();
-    }
-
-    fn value(&mut self, value: &[u8], oid: i32) {
-        match pg_types::oid_to_serialiser(oid) {
-            Serialiser::Bool => {
-                let s = if value[0] == 0 { "false" } else { "true" };
-                self.out.write(s.as_bytes()).unwrap();
-            }
-            Serialiser::Int16 => {
-                let int = i16::from_be_bytes([value[0], value[1]]);
-                self.out.write(int.to_string().as_bytes()).unwrap();
-            }
-            Serialiser::Int32 => {
-                let int = i32::from_be_bytes([value[0], value[1], value[2], value[3]]);
-                self.out.write(int.to_string().as_bytes()).unwrap();
-            }
-            Serialiser::String => self.string(value),
-            Serialiser::Unknown => {
-                eprintln!("Unhandled oid {} {:?}", oid, value);
-                self.string("???".as_bytes());
-            }
-        };
+fn write_value<T>(value: &[u8], oid: i32, out: &mut T)
+where
+    T: Write,
+{
+    match pg_types::oid_to_serialiser(oid) {
+        Serialiser::Bool => {
+            let bool = if value[0] == 0 { "false" } else { "true" };
+            out.write(bool.as_bytes()).unwrap();
+        }
+        Serialiser::Int16 => {
+            let int = i16::from_be_bytes([value[0], value[1]]);
+            itoa::write(out, int).unwrap();
+        }
+        Serialiser::Int32 => {
+            let int = i32::from_be_bytes([value[0], value[1], value[2], value[3]]);
+            itoa::write(out, int).unwrap();
+        }
+        Serialiser::String => {
+            let str = std::str::from_utf8(value).expect("Value will be a valid UTF-8 string.");
+            serde_json::to_writer(out, str).unwrap();
+        }
+        Serialiser::Unknown => {
+            eprintln!("Unhandled oid {} {:?}", oid, value);
+            out.write("???".as_bytes()).unwrap();
+        }
     }
 }
+
+const COMMA: &[u8] = ",".as_bytes();
+const QUOTE: &[u8] = "\"".as_bytes();
+const COLON: &[u8] = ":".as_bytes();
+const LEFT_BRACKET: &[u8] = "[".as_bytes();
+const RIGHT_BRACKET: &[u8] = "]".as_bytes();
+const LEFT_BRACE: &[u8] = "{".as_bytes();
+const RIGHT_BRACE: &[u8] = "}".as_bytes();
+const NEW_LINE: &[u8] = "\n".as_bytes();
