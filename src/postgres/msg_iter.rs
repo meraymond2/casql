@@ -1,7 +1,7 @@
 use std::io::Read;
 use std::net::TcpStream;
 
-const BUFFER_SIZE: usize = 20;
+const BUFFER_SIZE: usize = 1024;
 
 pub struct MsgIter<'stream> {
     stream: &'stream mut TcpStream,
@@ -21,7 +21,7 @@ impl<'stream> MsgIter<'stream> {
     }
 
     fn read_bytes(&mut self) {
-        let bytes_read = self.stream.read(&mut self.buf).unwrap();
+        let bytes_read = self.stream.read(&mut self.buf).unwrap_or(0);
         self.len = bytes_read;
         self.pos = 0;
     }

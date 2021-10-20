@@ -1,8 +1,20 @@
+mod cas_err;
 mod postgres;
 
+use crate::cas_err::CasErr;
 use postgres::conn::{Conn, ConnectionParams};
 
-fn main() -> std::io::Result<()> {
+fn main() {
+    match exec_query() {
+        Ok(_) => std::process::exit(0),
+        Err(err) => {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn exec_query() -> Result<(), CasErr> {
     let params = ConnectionParams {
         user: "michael".to_owned(),
         database: Some("dbname".to_owned()),
@@ -10,10 +22,6 @@ fn main() -> std::io::Result<()> {
         host: "localhost".to_owned(),
         password: Some("cascat".to_owned()),
     };
-    let conn = Conn::connect(params);
-    if let Ok(mut c) = conn {
-        // c.query(String::from("SELECT * FROM pg_type LIMIT 10"), vec![]);
-        c.query(String::from("SELECT * FROM pg_type"), vec![]);
-    }
-    Ok(())
+    let mut conn = Conn::connect(params)?;
+    conn.query(String::from("SELECT * FROM pg_type"), vec![])
 }

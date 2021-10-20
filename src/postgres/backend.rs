@@ -7,8 +7,8 @@ pub enum BackendMsg {
     BindComplete,
     Close,
     DataRow,
-    // EmptyQueryResponse,
-    ErrorResponse,
+    // EmptyQueryResponse, // TODO
+    // ErrorResponse, // TODO
     ParameterDescription,
     ParameterStatus,
     ParseComplete,
@@ -23,7 +23,7 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
         0x32 => BackendMsg::BindComplete,
         0x43 => BackendMsg::Close,
         0x44 => BackendMsg::DataRow,
-        0x45 => BackendMsg::ErrorResponse,
+        // 0x45 => BackendMsg::ErrorResponse,
         0x4B => BackendMsg::BackendKeyData,
         0x52 => match bytes[8] {
             0x00 => BackendMsg::AuthenticationOk,
@@ -105,7 +105,7 @@ impl BinaryMsg {
             self.pos += 1
         }
         let s = std::str::from_utf8(&self.bytes[start..self.pos])
-            .unwrap()
+            .expect("Value will be a valid UTF-8 string.")
             .to_owned();
         self.skip(1); // skip the null terminator
         s
