@@ -7,7 +7,7 @@ use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::postgis::{parse_type_lookup, POSTGIS_QUERY, POSTGIS_TYPES};
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::net::TcpStream;
 
 pub struct ConnectionParams {
@@ -65,7 +65,10 @@ impl Conn {
         self.stream.write(&frontend::execute_msg())?;
         self.stream.write(&frontend::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        JsonWriter::stdout(&mut resp, &self.dynamic_types).write_rows()
+        let stdout = std::io::stdout();
+        let handle = stdout.lock();
+        let mut buffered_writer = BufWriter::new(handle);
+        JsonWriter::new(&mut resp, &self.dynamic_types, &mut buffered_writer).write_rows()
     }
 
     fn send_startup(&mut self, user: String, database: Option<String>) -> Result<(), CasErr> {
