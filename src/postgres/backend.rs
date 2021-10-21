@@ -69,21 +69,21 @@ pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
     fields
 }
 
-struct BinaryMsg {
+pub struct BinaryMsg {
     bytes: Vec<u8>,
     pos: usize,
 }
 
 impl BinaryMsg {
-    fn from(bytes: Vec<u8>) -> Self {
+    pub fn from(bytes: Vec<u8>) -> Self {
         BinaryMsg { bytes, pos: 0 }
     }
 
-    fn skip(&mut self, n: usize) {
+    pub fn skip(&mut self, n: usize) {
         self.pos = self.pos + n;
     }
 
-    fn i16(&mut self) -> i16 {
+    pub fn i16(&mut self) -> i16 {
         let mut byte_arr: [u8; 2] = [0; 2];
         byte_arr.copy_from_slice(&self.bytes[(self.pos)..(self.pos + 2)]);
         let n = i16::from_be_bytes(byte_arr);
@@ -91,7 +91,7 @@ impl BinaryMsg {
         n
     }
 
-    fn i32(&mut self) -> i32 {
+    pub fn i32(&mut self) -> i32 {
         let mut byte_arr: [u8; 4] = [0; 4];
         byte_arr.copy_from_slice(&self.bytes[(self.pos)..(self.pos + 4)]);
         let n = i32::from_be_bytes(byte_arr);
@@ -99,7 +99,7 @@ impl BinaryMsg {
         n
     }
 
-    fn c_str(&mut self) -> String {
+    pub fn c_str(&mut self) -> String {
         let start = self.pos;
         while self.bytes[self.pos] != 0x00 {
             self.pos += 1
@@ -109,5 +109,12 @@ impl BinaryMsg {
             .to_owned();
         self.skip(1); // skip the null terminator
         s
+    }
+
+    pub fn bytes(&mut self, len: usize) -> Vec<u8> {
+        let slice = &self.bytes[self.pos..(self.pos + len)];
+        let vec = slice.to_vec();
+        self.skip(len);
+        vec
     }
 }

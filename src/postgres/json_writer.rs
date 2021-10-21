@@ -5,6 +5,7 @@ use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::pg_types;
 use crate::postgres::pg_types::Serialiser;
 use std::io::Write;
+use std::collections::HashMap;
 
 /*
 Given an iterator containing the raw Postgres responses from the query, we need to parse the
@@ -25,7 +26,7 @@ Close
 ReadyForQuery
 */
 
-pub fn write_json_rows(msgs: &mut MsgIter) -> Result<(), CasErr> {
+pub fn write_json_rows(msgs: &mut MsgIter, dynamic_types: &HashMap<i32, String>) -> Result<(), CasErr> {
     let stdout = std::io::stdout();
     let handle = stdout.lock();
     let mut out = std::io::BufWriter::new(handle);
