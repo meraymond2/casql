@@ -2,7 +2,7 @@ use crate::cas_err::CasErr;
 use crate::postgres::backend;
 use crate::postgres::backend::BackendMsg;
 use crate::postgres::frontend;
-use crate::postgres::json_writer::write_json_rows;
+use crate::postgres::json_writer::JsonWriter;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::postgis::{parse_type_lookup, POSTGIS_QUERY, POSTGIS_TYPES};
 use std::collections::HashMap;
@@ -65,7 +65,7 @@ impl Conn {
         self.stream.write(&frontend::execute_msg())?;
         self.stream.write(&frontend::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        write_json_rows(&mut resp, &self.dynamic_types)
+        JsonWriter::stdout(&mut resp, &self.dynamic_types).write_rows()
     }
 
     fn send_startup(&mut self, user: String, database: Option<String>) -> Result<(), CasErr> {
