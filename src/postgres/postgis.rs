@@ -1,6 +1,7 @@
 use crate::postgres::backend;
 use crate::postgres::backend::{BackendMsg, BinaryMsg};
 use crate::postgres::msg_iter::MsgIter;
+use crate::cas_err::CasErr;
 
 // Not all of them, just the external types
 pub const POSTGIS_TYPES: [&'static str; 5] =
@@ -14,11 +15,14 @@ pub struct PgType {
     pub oid: i32,
 }
 
-pub fn parse_type_lookup(resp: &mut MsgIter) -> Vec<PgType> {
+pub fn parse_type_lookup(resp: &mut MsgIter) -> Result<Vec<PgType>, CasErr> {
     let mut pg_types = Vec::with_capacity(POSTGIS_TYPES.len());
     while let Some(msg) = resp.next() {
         match backend::type_of(&msg) {
-            // BackendMsg::ErrorResponse => {} // TODO
+            BackendMsg::ErrorResponse => {
+                let err_msg = backend::parse_error_response(msg);
+                Err(CasErr::PostgresErr(err_msg.to_string()))?;
+            }
             BackendMsg::ParseComplete => {}
             BackendMsg::ParameterDescription => {}
             BackendMsg::RowDescription => {}
@@ -35,7 +39,7 @@ pub fn parse_type_lookup(resp: &mut MsgIter) -> Vec<PgType> {
             }
         }
     }
-    pg_types
+    Ok(pg_types)
 }
 
 fn parse_type_lookup_row(msg: Vec<u8>) -> PgType {

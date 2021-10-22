@@ -14,11 +14,11 @@ pub enum CasErr {
 impl Display for CasErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            CasErr::JsonErr(msg) => write!(f, "{}", msg),
-            CasErr::IoBrokenPipe => write!(f, ""),
-            CasErr::IoConnRefused => write!(f, "Error: could not connect to database"),
-            CasErr::IoErr(msg) => write!(f, "{}", msg),
-            CasErr::PostgresErr(msg) => write!(f, "{}", msg),
+            CasErr::JsonErr(msg) => write!(f, "JSON Error: {}", msg),
+            CasErr::IoBrokenPipe => write!(f, ""), // ignore SIGPIPEs
+            CasErr::IoConnRefused => write!(f, "IO Error: could not connect to database"),
+            CasErr::IoErr(msg) => write!(f, "IO Error: {}", msg),
+            CasErr::PostgresErr(msg) => write!(f, "Postgres Error: {}", msg),
         }
     }
 }

@@ -5,7 +5,7 @@ use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::pg_types;
 use crate::postgres::pg_types::Serialiser;
 use std::collections::HashMap;
-use std::io::{BufWriter, StdoutLock, Write};
+use std::io::Write;
 
 /*
 Given an iterator containing the raw Postgres responses from the query, we need to parse the
@@ -53,12 +53,13 @@ where
     /// Iterate over the messages in the Postgres query response. First capture the field types,
     /// then parse each row according to those types and print them to the out-stream.
     pub fn write_rows(&mut self) -> Result<(), CasErr> {
-        self.out.write(LEFT_BRACKET)?;
-
         let mut fields = Vec::new();
         while let Some(msg) = self.msgs.next() {
             match backend::type_of(&msg) {
-                // BackendMsg::ErrorResponse => {} // TODO
+                BackendMsg::ErrorResponse => {
+                    let err_msg = backend::parse_error_response(msg);
+                    Err(CasErr::PostgresErr(err_msg.to_string()))?;
+                }
                 BackendMsg::ParseComplete => {}
                 BackendMsg::ParameterDescription => {}
                 BackendMsg::RowDescription => {
@@ -67,6 +68,8 @@ where
                 BackendMsg::BindComplete => {}
                 BackendMsg::DataRow => {
                     if self.is_first {
+                        // Only start writing JSON when we know it’s not an error.
+                        self.out.write(LEFT_BRACKET)?;
                         self.is_first = false;
                     } else {
                         self.out.write(COMMA)?;
@@ -153,7 +156,7 @@ where
             Serialiser::Unknown => {
                 // If the oid isn’t a recognised constant one, check the runtime dynamic types.
                 match self.dynamic_types.get(&oid) {
-                    Some(typname) => {
+                    Some(_typname) => {
                         // TODO, the hash map should probably be oid to enum
                         serde_json::to_writer(&mut self.out, value)?;
                     }

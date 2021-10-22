@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::fmt::{Display, Formatter};
+
 #[derive(Debug)]
 pub enum BackendMsg {
     AuthenticationCleartextPassword,
@@ -8,7 +11,7 @@ pub enum BackendMsg {
     Close,
     DataRow,
     // EmptyQueryResponse, // TODO
-    // ErrorResponse, // TODO
+    ErrorResponse,
     ParameterDescription,
     ParameterStatus,
     ParseComplete,
@@ -23,7 +26,7 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
         0x32 => BackendMsg::BindComplete,
         0x43 => BackendMsg::Close,
         0x44 => BackendMsg::DataRow,
-        // 0x45 => BackendMsg::ErrorResponse,
+        0x45 => BackendMsg::ErrorResponse,
         0x4B => BackendMsg::BackendKeyData,
         0x52 => match bytes[8] {
             0x00 => BackendMsg::AuthenticationOk,
@@ -45,6 +48,19 @@ pub struct Field {
     pub data_type_oid: i32,
 }
 
+/**
+ * Int8 'T'
+ * Int32 Length
+ * Int16 Number of Fields
+ *
+ * String Field Name
+ * Int32 Table OID
+ * Int16 Column #
+ * Int32 Data Type OID
+ * Int16 Data Type Size
+ * Int32 Type Modifier
+ * Int16 Format Code
+ */
 pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
     let mut msg = BinaryMsg::from(bytes);
     // skip discriminator and message size
@@ -69,6 +85,49 @@ pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
     fields
 }
 
+// TODO: There are more fields that may or may not present, that I could add in later, and include
+// in the message if they exist.
+pub struct ErrorResponse {
+    code: String,
+    severity: String,
+    message: String,
+}
+
+impl Display for ErrorResponse {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {} ({})", self.severity, self.message, self.code)
+    }
+}
+
+/**
+ * Int8 'E'
+ * Int32 Length
+ * Int8 Error Field
+ *
+ * String Field Value
+ * Null Terminator
+ */
+pub fn parse_error_response(bytes: Vec<u8>) -> ErrorResponse {
+    let mut msg = BinaryMsg::from(bytes);
+    // skip tag and message length
+    msg.skip(5);
+
+    let mut fields = HashMap::new();
+    loop {
+        let error_key = msg.u8();
+        if error_key == 0x00 {
+            break;
+        }
+        let error_msg = msg.c_str();
+        fields.insert(error_key as char, error_msg);
+    }
+    ErrorResponse {
+        code: fields.remove(&'C').unwrap_or("".to_string()),
+        severity: fields.remove(&'S').unwrap_or("".to_string()),
+        message: fields.remove(&'M').unwrap_or("".to_string()),
+    }
+}
+
 pub struct BinaryMsg {
     bytes: Vec<u8>,
     pos: usize,
@@ -81,6 +140,12 @@ impl BinaryMsg {
 
     pub fn skip(&mut self, n: usize) {
         self.pos = self.pos + n;
+    }
+
+    pub fn u8(&mut self) -> u8 {
+        let byte = self.bytes[self.pos];
+        self.pos += 1;
+        byte
     }
 
     pub fn i16(&mut self) -> i16 {

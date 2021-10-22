@@ -88,9 +88,10 @@ impl Conn {
                     self.state = ConnectionState::PasswordRequestedMd5(salt);
                     Ok(())
                 }
-                // BackendMsg::ErrorResponse => {
-                //     todo!("handle postgres errors");
-                // }
+                BackendMsg::ErrorResponse => {
+                    let err_msg = backend::parse_error_response(msg);
+                    Err(CasErr::PostgresErr(err_msg.to_string()))
+                }
                 BackendMsg::ReadyForQuery => {
                     self.state = ConnectionState::ReadyForQuery;
                     Ok(())
@@ -112,9 +113,10 @@ impl Conn {
         let mut msgs = MsgIter::new(&mut self.stream);
         while let Some(msg) = msgs.next() {
             match backend::type_of(&msg) {
-                // BackendMsg::ErrorResponse => {
-                //     todo!("handle postgres errors");
-                // }
+                BackendMsg::ErrorResponse => {
+                    let err_msg = backend::parse_error_response(msg);
+                    Err(CasErr::PostgresErr(err_msg.to_string()))?;
+                }
                 BackendMsg::AuthenticationOk => {}
                 BackendMsg::ParameterStatus => {}
                 BackendMsg::BackendKeyData => {}
@@ -138,7 +140,7 @@ impl Conn {
         self.stream.write(&frontend::execute_msg())?;
         self.stream.write(&frontend::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        let mut pg_types = parse_type_lookup(&mut resp);
+        let mut pg_types = parse_type_lookup(&mut resp)?;
         while let Some(pg_type) = pg_types.pop() {
             self.dynamic_types.insert(pg_type.oid, pg_type.name);
         }
