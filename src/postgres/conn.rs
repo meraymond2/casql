@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::io::{BufWriter, Write};
 use std::net::TcpStream;
+use crate::postgres::pg_types::RuntimePostgresType;
 
 pub struct ConnectionParams {
     pub host: String,
@@ -23,7 +24,7 @@ pub struct ConnectionParams {
 pub struct Conn {
     state: ConnectionState,
     stream: TcpStream,
-    dynamic_types: HashMap<i32, String>,
+    dynamic_types: HashMap<i32, RuntimePostgresType>,
 }
 
 impl Conn {

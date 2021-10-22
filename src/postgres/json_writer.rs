@@ -3,7 +3,7 @@ use crate::postgres::backend;
 use crate::postgres::backend::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::pg_types;
-use crate::postgres::pg_types::Serialiser;
+use crate::postgres::pg_types::{RuntimePostgresType, Serialiser};
 use std::collections::HashMap;
 use std::io::Write;
 
@@ -28,7 +28,7 @@ ReadyForQuery
 
 pub struct JsonWriter<'a, T> {
     msgs: &'a mut MsgIter<'a>,
-    dynamic_types: &'a HashMap<i32, String>,
+    dynamic_types: &'a HashMap<i32, RuntimePostgresType>,
     out: &'a mut T,
     is_first: bool,
 }
@@ -39,7 +39,7 @@ where
 {
     pub fn new(
         msgs: &'a mut MsgIter<'a>,
-        dynamic_types: &'a HashMap<i32, String>,
+        dynamic_types: &'a HashMap<i32, RuntimePostgresType>,
         out: &'a mut T,
     ) -> Self {
         JsonWriter {
@@ -156,10 +156,12 @@ where
             Serialiser::Unknown => {
                 // If the oid isn’t a recognised constant one, check the runtime dynamic types.
                 match self.dynamic_types.get(&oid) {
-                    Some(_typname) => {
-                        // TODO, the hash map should probably be oid to enum
-                        serde_json::to_writer(&mut self.out, value)?;
-                    }
+                    Some(ty) => match ty {
+                        RuntimePostgresType::Geometry => {
+                            self.out.write("geom, todo".as_bytes())?;
+                        }
+                        _ => {}
+                    },
                     None => {
                         eprintln!("Unhandled oid {} {:?}", oid, value);
                         self.out.write("???".as_bytes())?;

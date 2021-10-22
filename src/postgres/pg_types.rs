@@ -7,6 +7,32 @@ pub enum Serialiser {
     Unknown,
 }
 
+/// The types that I know of and care about, for which I can’t know the oids until runtime.
+/// For now just the public Postgis types.
+#[derive(Debug)]
+pub enum RuntimePostgresType {
+    Geometry,
+    Geography,
+    Box2d,
+    Box3d,
+    GeometryDump,
+}
+
+impl std::str::FromStr for RuntimePostgresType {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "geometry" => Ok(RuntimePostgresType::Geometry),
+            "geography" => Ok(RuntimePostgresType::Geography),
+            "box2d" => Ok(RuntimePostgresType::Box2d),
+            "box3d" => Ok(RuntimePostgresType::Box3d),
+            "geometry_dump" => Ok(RuntimePostgresType::GeometryDump),
+            _ => Err(()), // unreachable
+        }
+    }
+}
+
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 pub fn oid_to_serialiser(oid: i32) -> Serialiser {
     match oid {

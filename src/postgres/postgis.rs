@@ -1,7 +1,9 @@
+use crate::cas_err::CasErr;
 use crate::postgres::backend;
 use crate::postgres::backend::{BackendMsg, BinaryMsg};
 use crate::postgres::msg_iter::MsgIter;
-use crate::cas_err::CasErr;
+use crate::postgres::pg_types::RuntimePostgresType;
+use std::str::FromStr;
 
 // Not all of them, just the external types
 pub const POSTGIS_TYPES: [&'static str; 5] =
@@ -11,7 +13,7 @@ pub const POSTGIS_QUERY: &'static str =  "SELECT typname, oid FROM pg_type WHERE
 
 #[derive(Debug)]
 pub struct PgType {
-    pub name: String,
+    pub name: RuntimePostgresType,
     pub oid: i32,
 }
 
@@ -51,10 +53,12 @@ fn parse_type_lookup_row(msg: Vec<u8>) -> PgType {
 
     let name_len = msg.i32();
     let name_bytes = msg.bytes(name_len as usize);
-    let name = std::str::from_utf8(&name_bytes)
-        .expect("Value will be a valid UTF-8 string.")
-        .to_owned();
+    let name = std::str::from_utf8(&name_bytes).expect("Value will be a valid UTF-8 string.");
     msg.skip(4); // skip oid length, it’s always 4
     let oid = msg.i32();
-    PgType { name, oid }
+
+    PgType {
+        name: RuntimePostgresType::from_str(&name).expect("Unreachable."),
+        oid,
+    }
 }
