@@ -4,6 +4,7 @@ use crate::postgres::backend::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::pg_types;
 use crate::postgres::pg_types::{RuntimePostgresType, Serialiser};
+use crate::postgres::postgis_ewkb::parse_geom;
 use std::collections::HashMap;
 use std::io::Write;
 
@@ -158,7 +159,10 @@ where
                 match self.dynamic_types.get(&oid) {
                     Some(ty) => match ty {
                         RuntimePostgresType::Geometry => {
-                            self.out.write("geom, todo".as_bytes())?;
+                            serde_json::to_writer(
+                                &mut self.out,
+                                &format!("{:?}", parse_geom(value)),
+                            )?;
                         }
                         _ => {}
                     },

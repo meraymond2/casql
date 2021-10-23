@@ -25,5 +25,6 @@ fn exec_query() -> Result<(), CasErr> {
     };
     let mut conn = Conn::connect(params)?;
     // conn.query(String::from("SELECT * FROM pg_type"), vec![])
-    conn.query(String::from("SELECT * FROM geoms"), vec![])
+    // conn.query(String::from("SELECT * FROM geoms"), vec![])
+    conn.query(String::from("SELECT * FROM points"), vec![])
 }
