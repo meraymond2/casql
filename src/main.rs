@@ -1,8 +1,8 @@
+mod binary_reader;
 mod cas_err;
-mod postgres_first_attempt;
-
+mod postgres;
 use crate::cas_err::CasErr;
-use postgres_first_attempt::conn::{Conn, ConnectionParams};
+use postgres::connection::{Conn, ConnectionParams};
 
 fn main() {
     match exec_query() {
@@ -24,6 +24,7 @@ fn exec_query() -> Result<(), CasErr> {
         postgis: false,
     };
     let mut conn = Conn::connect(params)?;
-    conn.query(String::from("SELECT * FROM pg_type"), vec![])
+    // conn.query(String::from("SELECT * FROM pg_type"), vec![])
     // conn.query(String::from("SELECT * FROM points"), vec![])
+    Ok(())
 }

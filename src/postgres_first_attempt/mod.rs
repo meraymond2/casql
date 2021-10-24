@@ -1,10 +1,10 @@
 mod backend;
+mod bin_reader;
 pub mod conn;
+mod ewkb_writer;
 mod frontend;
 mod json_writer;
 mod msg_iter;
 mod pg_types;
 mod postgis;
 mod postgis_ewkb;
-mod bin_reader;
-mod ewkb_writer;

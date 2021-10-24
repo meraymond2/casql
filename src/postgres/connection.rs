@@ -1,14 +1,12 @@
 use crate::cas_err::CasErr;
-use crate::postgres_first_attempt::backend;
-use crate::postgres_first_attempt::backend::BackendMsg;
-use crate::postgres_first_attempt::frontend;
-use crate::postgres_first_attempt::json_writer::JsonWriter;
-use crate::postgres_first_attempt::msg_iter::MsgIter;
-use crate::postgres_first_attempt::pg_types::RuntimePostgresType;
-use crate::postgres_first_attempt::postgis::{parse_type_lookup, POSTGIS_QUERY, POSTGIS_TYPES};
+use crate::postgres::backend_msgs;
+use crate::postgres::backend_msgs::BackendMsg;
+use crate::postgres::frontend_msgs;
+use crate::postgres::msg_iter::MsgIter;
+use crate::postgres::postgis::types::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
 use std::collections::HashMap;
 use std::convert::TryInto;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::net::TcpStream;
 
 pub struct ConnectionParams {
@@ -24,7 +22,7 @@ pub struct ConnectionParams {
 pub struct Conn {
     state: ConnectionState,
     stream: TcpStream,
-    dynamic_types: HashMap<i32, RuntimePostgresType>,
+    dynamic_types: HashMap<i32, String>,
 }
 
 impl Conn {
@@ -40,15 +38,16 @@ impl Conn {
             dynamic_types,
         };
 
-        conn.send_startup(params.user.clone(), params.database)?;
+        let dbname = params.database.as_ref().unwrap_or(&params.user);
+        let password = params.password.as_ref().map(|pd| pd.as_str()).unwrap_or("");
+        conn.send_startup(&params.user, dbname)?;
         match conn.state {
             ConnectionState::PasswordRequestedCleartext => {
-                conn.send_password(params.password.unwrap_or(String::from("")))?;
+                conn.send_password(password)?;
             }
             ConnectionState::PasswordRequestedMd5(salt) => {
-                let password = params.password.unwrap_or(String::from(""));
                 let hashed_pass = md5_password(&params.user, &password, salt);
-                conn.send_password(hashed_pass)?;
+                conn.send_password(&hashed_pass)?;
             }
             ConnectionState::ReadyForQuery => {}
             ConnectionState::Uninitialised => unreachable!(),
@@ -59,38 +58,36 @@ impl Conn {
         Ok(conn)
     }
 
-    pub fn query(&mut self, query: String, params: Vec<String>) -> Result<(), CasErr> {
-        self.stream.write(&frontend::parse_msg(&query))?;
-        self.stream.write(&frontend::describe_msg())?;
-        self.stream.write(&frontend::bind_msg(params))?;
-        self.stream.write(&frontend::execute_msg())?;
-        self.stream.write(&frontend::sync_msg())?;
-        let mut resp = MsgIter::new(&mut self.stream);
-        let stdout = std::io::stdout();
-        let handle = stdout.lock();
-        let mut buffered_writer = BufWriter::new(handle);
-        JsonWriter::new(&mut resp, &self.dynamic_types, &mut buffered_writer).write_rows()
-    }
+    // pub fn query(&mut self, query: String, params: Vec<String>) -> Result<(), CasErr> {
+    //     self.stream.write(&frontend_msgs::parse_msg(&query))?;
+    //     self.stream.write(&frontend_msgs::describe_msg())?;
+    //     self.stream.write(&frontend_msgs::bind_msg(params))?;
+    //     self.stream.write(&frontend_msgs::execute_msg())?;
+    //     self.stream.write(&frontend_msgs::sync_msg())?;
+    //     let mut resp = MsgIter::new(&mut self.stream);
+    //     let stdout = std::io::stdout();
+    //     let handle = stdout.lock();
+    //     let mut buffered_writer = BufWriter::new(handle);
+    //     JsonWriter::new(&mut resp, &self.dynamic_types, &mut buffered_writer).write_rows()
+    // }
 
-    fn send_startup(&mut self, user: String, database: Option<String>) -> Result<(), CasErr> {
+    fn send_startup(&mut self, user: &str, database: &str) -> Result<(), CasErr> {
         self.stream
-            .write(&frontend::startup_msg(user, database, 3, 0))?;
+            .write(&frontend_msgs::startup_msg(user, database, 3, 0))?;
         let mut msgs = MsgIter::new(&mut self.stream);
         if let Some(msg) = msgs.next() {
-            match backend::type_of(&msg) {
+            match backend_msgs::type_of(&msg) {
                 BackendMsg::AuthenticationCleartextPassword => {
                     self.state = ConnectionState::PasswordRequestedCleartext;
                     Ok(())
                 }
                 BackendMsg::AuthenticationMD5Password => {
-                    let salt: [u8; 4] = msg[9..13]
-                        .try_into()
-                        .expect("Slice should be right length.");
+                    let salt = [msg[9], msg[10], msg[11], msg[12]];
                     self.state = ConnectionState::PasswordRequestedMd5(salt);
                     Ok(())
                 }
                 BackendMsg::ErrorResponse => {
-                    let err_msg = backend::parse_error_response(msg);
+                    let err_msg = backend_msgs::parse_error_response(&msg);
                     Err(CasErr::PostgresErr(err_msg.to_string()))
                 }
                 BackendMsg::ReadyForQuery => {
@@ -109,13 +106,13 @@ impl Conn {
         }
     }
 
-    fn send_password(&mut self, password: String) -> Result<(), CasErr> {
-        self.stream.write(&frontend::password_msg(password))?;
+    fn send_password(&mut self, password: &str) -> Result<(), CasErr> {
+        self.stream.write(&frontend_msgs::password_msg(password))?;
         let mut msgs = MsgIter::new(&mut self.stream);
         while let Some(msg) = msgs.next() {
-            match backend::type_of(&msg) {
+            match backend_msgs::type_of(&msg) {
                 BackendMsg::ErrorResponse => {
-                    let err_msg = backend::parse_error_response(msg);
+                    let err_msg = backend_msgs::parse_error_response(&msg);
                     Err(CasErr::PostgresErr(err_msg.to_string()))?;
                 }
                 BackendMsg::AuthenticationOk => {}
@@ -135,15 +132,31 @@ impl Conn {
     }
 
     fn query_postgis_oids(&mut self) -> Result<(), CasErr> {
-        self.stream.write(&frontend::parse_msg(&POSTGIS_QUERY))?;
-        self.stream.write(&frontend::describe_msg())?;
-        self.stream.write(&frontend::bind_msg(Vec::new()))?;
-        self.stream.write(&frontend::execute_msg())?;
-        self.stream.write(&frontend::sync_msg())?;
+        self.stream
+            .write(&frontend_msgs::parse_msg(&POSTGIS_TYPE_QUERY))?;
+        self.stream.write(&frontend_msgs::describe_msg())?;
+        self.stream.write(&frontend_msgs::bind_msg(Vec::new()))?;
+        self.stream.write(&frontend_msgs::execute_msg())?;
+        self.stream.write(&frontend_msgs::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        let mut pg_types = parse_type_lookup(&mut resp)?;
-        while let Some(pg_type) = pg_types.pop() {
-            self.dynamic_types.insert(pg_type.oid, pg_type.name);
+        let mut dynamic_types = &mut self.dynamic_types;
+        while let Some(msg) = resp.next() {
+            match backend_msgs::type_of(&msg) {
+                BackendMsg::ErrorResponse => {
+                    let err_msg = backend_msgs::parse_error_response(&msg);
+                    Err(CasErr::PostgresErr(err_msg.to_string()))?;
+                }
+                BackendMsg::DataRow => {
+                    let pg_type = backend_msgs::parse_type_lookup_row(&msg);
+                    dynamic_types.insert(pg_type.oid, pg_type.name);
+                }
+                BackendMsg::ReadyForQuery => {
+                    break;
+                }
+                _ => {
+                    eprintln!("Received unexpected message from Postgres: {:?}", msg);
+                }
+            }
         }
         Ok(())
     }
@@ -171,7 +184,7 @@ fn md5_password(user: &str, password: &str, salt: [u8; 4]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::postgres_first_attempt::conn::md5_password;
+    use crate::postgres::connection::md5_password;
 
     #[test]
     fn test_md5() {

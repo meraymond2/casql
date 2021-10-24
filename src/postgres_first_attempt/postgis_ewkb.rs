@@ -54,12 +54,10 @@ fn parse_linestring(bytes: &[u8]) -> EWKB {
             let count = reader.i32() as usize;
             let mut points = Vec::new();
             for _ in 0..count {
-                points.push([
-                    reader.f64(), reader.f64()
-                ])
+                points.push([reader.f64(), reader.f64()])
             }
             EWKB::LineString(None, points)
-        },
+        }
         _ => unreachable!(),
     }
 }
