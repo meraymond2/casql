@@ -5,7 +5,7 @@ pub enum ByteOrder {
 
 pub struct BinaryReader<'a> {
     bytes: &'a [u8],
-    pos: usize,
+    pub pos: usize,
     order: ByteOrder,
 }
 
