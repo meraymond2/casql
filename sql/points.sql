@@ -1,5 +1,6 @@
 CREATE TABLE points
 (
+    id serial,
     point geometry
 );
 
