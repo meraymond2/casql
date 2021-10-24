@@ -1,8 +1,8 @@
 use crate::cas_err::CasErr;
-use crate::postgres::backend;
-use crate::postgres::backend::{BackendMsg, BinaryMsg};
-use crate::postgres::msg_iter::MsgIter;
-use crate::postgres::pg_types::RuntimePostgresType;
+use crate::postgres_first_attempt::backend;
+use crate::postgres_first_attempt::backend::{BackendMsg, BinaryMsg};
+use crate::postgres_first_attempt::msg_iter::MsgIter;
+use crate::postgres_first_attempt::pg_types::RuntimePostgresType;
 use std::str::FromStr;
 
 // Not all of them, just the external types

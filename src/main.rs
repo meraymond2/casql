@@ -1,8 +1,8 @@
 mod cas_err;
-mod postgres;
+mod postgres_first_attempt;
 
 use crate::cas_err::CasErr;
-use postgres::conn::{Conn, ConnectionParams};
+use postgres_first_attempt::conn::{Conn, ConnectionParams};
 
 fn main() {
     match exec_query() {
@@ -21,11 +21,9 @@ fn exec_query() -> Result<(), CasErr> {
         port: Some(5432),
         host: "localhost".to_owned(),
         password: Some("cascat".to_owned()),
-        postgis: true,
+        postgis: false,
     };
     let mut conn = Conn::connect(params)?;
-    // conn.query(String::from("SELECT * FROM pg_type"), vec![])
-    // conn.query(String::from("SELECT * FROM geoms"), vec![])
+    conn.query(String::from("SELECT * FROM pg_type"), vec![])
     // conn.query(String::from("SELECT * FROM points"), vec![])
-    conn.query(String::from("SELECT id, ST_ASGEOJSON(point) FROM points"), vec![])
 }

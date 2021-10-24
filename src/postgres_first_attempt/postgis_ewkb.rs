@@ -1,5 +1,5 @@
-use crate::postgres::bin_reader;
-use crate::postgres::bin_reader::{BinaryReader, ByteOrder};
+use crate::postgres_first_attempt::bin_reader;
+use crate::postgres_first_attempt::bin_reader::{BinaryReader, ByteOrder};
 
 #[derive(Debug)]
 pub enum EWKB {

@@ -1,5 +1,5 @@
 use crate::cas_err::CasErr;
-use crate::postgres::bin_reader::{BinaryReader, ByteOrder};
+use crate::postgres_first_attempt::bin_reader::{BinaryReader, ByteOrder};
 use std::io::Write;
 
 // TODO, this might end up as a class like JSONWriter, just to avoid sharing the args everywhere

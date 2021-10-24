@@ -1,15 +1,15 @@
 use crate::cas_err::CasErr;
-use crate::postgres::backend;
-use crate::postgres::backend::BackendMsg;
-use crate::postgres::frontend;
-use crate::postgres::json_writer::JsonWriter;
-use crate::postgres::msg_iter::MsgIter;
-use crate::postgres::postgis::{parse_type_lookup, POSTGIS_QUERY, POSTGIS_TYPES};
+use crate::postgres_first_attempt::backend;
+use crate::postgres_first_attempt::backend::BackendMsg;
+use crate::postgres_first_attempt::frontend;
+use crate::postgres_first_attempt::json_writer::JsonWriter;
+use crate::postgres_first_attempt::msg_iter::MsgIter;
+use crate::postgres_first_attempt::postgis::{parse_type_lookup, POSTGIS_QUERY, POSTGIS_TYPES};
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::io::{BufWriter, Write};
 use std::net::TcpStream;
-use crate::postgres::pg_types::RuntimePostgresType;
+use crate::postgres_first_attempt::pg_types::RuntimePostgresType;
 
 pub struct ConnectionParams {
     pub host: String,
@@ -171,7 +171,7 @@ fn md5_password(user: &str, password: &str, salt: [u8; 4]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::postgres::conn::md5_password;
+    use crate::postgres_first_attempt::conn::md5_password;
 
     #[test]
     fn test_md5() {

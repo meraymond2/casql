@@ -1,5 +1,2 @@
 target/
-
-notes.md
-postgis-table.sql
-types.json
+notes/
