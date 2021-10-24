@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "itoa",
  "md5",
+ "ryu",
  "serde_json",
 ]
 

@@ -7,3 +7,4 @@ mod pg_types;
 mod postgis;
 mod postgis_ewkb;
 mod bin_reader;
+mod ewkb_writer;

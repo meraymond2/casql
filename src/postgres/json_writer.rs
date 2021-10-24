@@ -1,6 +1,7 @@
 use crate::cas_err::CasErr;
 use crate::postgres::backend;
 use crate::postgres::backend::{BackendMsg, Field};
+use crate::postgres::ewkb_writer::write_geometry;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::pg_types;
 use crate::postgres::pg_types::{RuntimePostgresType, Serialiser};
@@ -50,6 +51,11 @@ where
             is_first: true,
         }
     }
+
+    // TODO: I still think I could probably do this better. I don't think it necessarily needs to be
+    // a MsgIter -> RowIter transformation step, because I don't want to call .next() on the rows,
+    // because I only want to do that within the context of writing a json-array. But I could separate
+    // out finding the field descriptions and starting the array from writing the rows maybe.
 
     /// Iterate over the messages in the Postgres query response. First capture the field types,
     /// then parse each row according to those types and print them to the out-stream.
@@ -137,6 +143,7 @@ where
     fn write_json_value(&mut self, value: &[u8], oid: i32) -> Result<(), CasErr> {
         // Using serde_json for strings to handle escaping — it’s not enough to copy the string
         // bytes straight from the Postgres message. And itoa for faster numeric writing.
+        // TODO: separate finding the right serialiser from actually writing out the bytes.
         match pg_types::oid_to_serialiser(oid) {
             Serialiser::Bool => {
                 let bool = if value[0] == 0 { "false" } else { "true" };
@@ -159,10 +166,7 @@ where
                 match self.dynamic_types.get(&oid) {
                     Some(ty) => match ty {
                         RuntimePostgresType::Geometry => {
-                            serde_json::to_writer(
-                                &mut self.out,
-                                &format!("{:?}", parse_geom(value)),
-                            )?;
+                            write_geometry(value, self.out)?;
                         }
                         _ => {}
                     },
