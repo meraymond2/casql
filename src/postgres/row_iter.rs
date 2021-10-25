@@ -44,7 +44,6 @@ impl<'msgs> RowIter<'msgs> {
                 BackendMsg::ParameterDescription => {}
                 BackendMsg::RowDescription => {
                     fields = backend_msgs::parse_row_desc(&msg);
-                    println!("{:?}", fields);
                 }
                 BackendMsg::BindComplete => {}
                 BackendMsg::DataRow => {
