@@ -1,5 +1,5 @@
 use crate::postgres::backend_msgs::Field;
-use crate::postgres::row_iter::CasVal;
+use crate::cas_val::CasVal;
 
 pub type ParseClosure = Box<dyn FnMut(Option<&[u8]>, usize) -> (String, CasVal)>;
 

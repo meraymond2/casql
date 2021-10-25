@@ -1,8 +1,8 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
-use crate::postgres::row_iter::CasVal;
 use crate::postgres::types;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use crate::cas_val::CasVal;
 
 #[derive(Debug)]
 pub enum BackendMsg {

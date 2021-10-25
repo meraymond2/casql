@@ -4,16 +4,7 @@ use crate::postgres::backend_msgs::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::types::{parser_generator, ParseClosure};
 use std::collections::HashMap;
-
-#[derive(Debug)]
-pub enum CasVal {
-    Bool(bool),
-    Null,
-    Int16(i16),
-    Int32(i32),
-    Str(String),
-    Unparsed
-}
+use crate::cas_val::CasVal;
 
 // The messages arrive from Postgres in the following order:
 // ParseComplete
