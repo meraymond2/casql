@@ -184,8 +184,7 @@ pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
  */
 pub fn parse_data_row(
     msg: &[u8],
-    fields: &Vec<Field>,
-    dynamic_types: &HashMap<i32, String>,
+    parse: &mut impl FnMut(usize) -> String,
 ) -> HashMap<String, CasVal> {
     let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
     // skip discriminator, message size
@@ -194,20 +193,27 @@ pub fn parse_data_row(
     let mut parsed = HashMap::new();
     let value_count = rdr.i16() as usize;
     for idx in 0..value_count {
-        let value_len = rdr.i32();
-        if value_len == -1 {
-            parsed.insert(fields[idx].name.clone(), CasVal::Null);
+        let value_len = rdr.i32() ;
+        let value_bytes = if value_len == -1 {
+            &[]
         } else {
-            // let bytes = rdr.byte
-            parsed.insert(
-                fields[idx].name.clone(),
-                types::parse_value(
-                    &rdr.byte_slice(value_len as usize),
-                    fields[idx].data_type_oid,
-                    dynamic_types,
-                ),
-            );
-        }
+            rdr.byte_slice(value_len as usize)
+        };
+        let parsed: String = parse(idx);
+        println!("{:?}", parsed);
+        // if value_len == -1 {
+        //     parsed.insert(fields[idx].name.clone(), CasVal::Null);
+        // } else {
+        //     // let bytes = rdr.byte
+        //     parsed.insert(
+        //         fields[idx].name.clone(),
+        //         types::parse_value(
+        //             &rdr.byte_slice(value_len as usize),
+        //             fields[idx].data_type_oid,
+        //             dynamic_types,
+        //         ),
+        //     );
+        // }
     }
     parsed
 }

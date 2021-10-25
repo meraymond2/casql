@@ -4,6 +4,8 @@ use crate::postgres::backend_msgs::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
 use std::collections::HashMap;
 
+type ParseClosure = Box<dyn FnMut(usize) -> String>;
+
 #[derive(Debug)]
 pub enum CasVal {
     Null,
@@ -21,8 +23,9 @@ pub enum CasVal {
 // ReadyForQuery
 pub struct RowIter<'msgs> {
     msgs: &'msgs mut MsgIter<'msgs>,
-    pub fields: Vec<Field>,
-    pub dynamic_types: HashMap<i32, String>,
+    parse: ParseClosure,
+    // pub fields: Vec<Field>,
+    // pub dynamic_types: HashMap<i32, String>,
 }
 
 impl<'msgs> RowIter<'msgs> {
@@ -54,8 +57,7 @@ impl<'msgs> RowIter<'msgs> {
         }
         Ok(RowIter {
             msgs,
-            fields,
-            dynamic_types,
+            parse: bool_maker_maker(fields),
         })
     }
 }
@@ -67,11 +69,7 @@ impl<'msgs> Iterator for RowIter<'msgs> {
         self.msgs
             .next()
             .and_then(|msg| match backend_msgs::type_of(&msg) {
-                BackendMsg::DataRow => Some(backend_msgs::parse_data_row(
-                    &msg,
-                    &self.fields,
-                    &self.dynamic_types,
-                )),
+                BackendMsg::DataRow => Some(backend_msgs::parse_data_row(&msg, &mut self.parse)),
                 BackendMsg::Close => self.next(),
                 BackendMsg::ReadyForQuery => None, // finished
                 _ => {
@@ -80,4 +78,12 @@ impl<'msgs> Iterator for RowIter<'msgs> {
                 }
             })
     }
+}
+
+fn bool_maker_maker(fields: Vec<Field>) -> Box<dyn FnMut(usize) -> String> {
+    let f = move |i| {
+        let field: &Field = &fields[i];
+        field.name.clone()
+    };
+    Box::new(f)
 }
