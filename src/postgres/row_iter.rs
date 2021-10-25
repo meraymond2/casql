@@ -4,7 +4,7 @@ use crate::postgres::backend_msgs::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
 use std::collections::HashMap;
 
-type ParseClosure = Box<dyn FnMut(usize) -> String>;
+type ParseClosure = Box<dyn FnMut(Option<Vec<u8>>, usize) -> String>;
 
 #[derive(Debug)]
 pub enum CasVal {
@@ -57,7 +57,7 @@ impl<'msgs> RowIter<'msgs> {
         }
         Ok(RowIter {
             msgs,
-            parse: bool_maker_maker(fields),
+            parse: parser_generator(fields),
         })
     }
 }
@@ -80,8 +80,8 @@ impl<'msgs> Iterator for RowIter<'msgs> {
     }
 }
 
-fn bool_maker_maker(fields: Vec<Field>) -> Box<dyn FnMut(usize) -> String> {
-    let f = move |i| {
+fn parser_generator(fields: Vec<Field>) -> ParseClosure {
+    let f = move |bytes, i| {
         let field: &Field = &fields[i];
         field.name.clone()
     };
