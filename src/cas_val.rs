@@ -1,8 +1,11 @@
+use crate::json::geojson;
+use crate::postgres::postgis::ewkb::EWKB;
 use serde::{Serialize, Serializer};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum CasVal {
     Bool(bool),
+    Geom(EWKB),
     Int16(i16),
     Int32(i32),
     Str(String),
@@ -17,13 +20,12 @@ impl Serialize for CasVal {
     {
         match self {
             CasVal::Bool(b) => serializer.serialize_bool(*b),
+            CasVal::Geom(geo) => serializer.serialize_str(&format!("{:?}", geo)),
             CasVal::Null => serializer.serialize_unit(),
             CasVal::Int16(int) => serializer.serialize_i16(*int),
             CasVal::Int32(int) => serializer.serialize_i32(*int),
             CasVal::Str(string) => serializer.serialize_str(string),
             CasVal::Unparsed => serializer.serialize_str("???"),
-
-
             // CasVal::UUID(string) => serializer.serialize_str(string),
             // CasVal::Int64(n) => serializer.serialize_i64(*n),
             // CasVal::UInt32(n) => serializer.serialize_u32(*n),

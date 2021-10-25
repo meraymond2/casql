@@ -1,5 +1,6 @@
 use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
+use crate::postgres::postgis::ewkb::EWKB;
 use crate::postgres::row_iter::RowIter;
 use serde::ser::SerializeSeq;
 use serde::ser::Serializer;

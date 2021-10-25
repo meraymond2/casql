@@ -1,12 +1,16 @@
-use crate::postgres::backend_msgs::Field;
 use crate::cas_val::CasVal;
+use crate::postgres::backend_msgs::Field;
+use crate::postgres::postgis::ewkb;
+use std::collections::HashMap;
 
 pub type ParseClosure = Box<dyn FnMut(Option<&[u8]>, usize) -> (String, CasVal)>;
 
-pub fn parser_generator(fields: Vec<Field>) -> ParseClosure {
+pub fn parser_generator(fields: Vec<Field>, dynamic_types: HashMap<i32, String>) -> ParseClosure {
     let f = move |maybe_bytes: Option<&[u8]>, idx: usize| {
         let field: &Field = &fields[idx];
-        let parser = parser_for_oid(field.data_type_oid);
+        let parser = parser_for_oid(field.data_type_oid).or(dynamic_types
+            .get(&field.data_type_oid)
+            .and_then(parser_for_dynamic_type));
         if let Some(bytes) = maybe_bytes {
             let val = match parser {
                 Some(parser) => parse_value(bytes, parser),
@@ -39,7 +43,8 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
             CasVal::Str(str.to_owned())
         }
         Parser::EWKB => {
-            unimplemented!()
+            let geom = ewkb::parse_geom(bytes);
+            CasVal::Geom(geom)
         }
     }
 }
@@ -58,16 +63,16 @@ fn parser_for_oid(oid: i32) -> Option<Parser> {
         _ => {
             eprintln!("Unhandled oid {}.", oid);
             None
-        },
+        }
     }
 }
 
-// fn runtime_types(typname: &String) -> Option<Parser> {
-//     match typname.as_str() {
-//         "geometry" => Some(Parser::EWKB),
-//         _ => None,
-//     }
-// }
+fn parser_for_dynamic_type(typname: &String) -> Option<Parser> {
+    match typname.as_str() {
+        "geometry" => Some(Parser::EWKB),
+        _ => None,
+    }
+}
 
 #[derive(Debug)]
 enum Parser {

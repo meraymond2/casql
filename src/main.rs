@@ -23,7 +23,7 @@ fn exec_query() -> Result<(), CasErr> {
         port: Some(5432),
         host: "localhost".to_owned(),
         password: Some("cascat".to_owned()),
-        postgis: false,
+        postgis: true,
     };
     let mut conn = Conn::connect(params)?;
     // conn.query(String::from("SELECT * FROM pg_type"), vec![], json::write_json)

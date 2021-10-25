@@ -47,7 +47,7 @@ impl<'msgs> RowIter<'msgs> {
         }
         Ok(RowIter {
             msgs,
-            parse: parser_generator(fields),
+            parse: parser_generator(fields, dynamic_types),
         })
     }
 }

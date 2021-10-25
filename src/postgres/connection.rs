@@ -149,10 +149,15 @@ impl Conn {
                     let err_msg = backend_msgs::parse_error_response(&msg);
                     Err(CasErr::PostgresErr(err_msg.to_string()))?;
                 }
+                BackendMsg::ParseComplete => {}
+                BackendMsg::ParameterDescription => {}
+                BackendMsg::RowDescription => {}
+                BackendMsg::BindComplete => {}
                 BackendMsg::DataRow => {
                     let pg_type = backend_msgs::parse_type_lookup_row(&msg);
                     dynamic_types.insert(pg_type.oid, pg_type.name);
                 }
+                BackendMsg::Close => {}
                 BackendMsg::ReadyForQuery => {
                     break;
                 }
