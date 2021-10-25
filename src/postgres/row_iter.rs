@@ -2,15 +2,17 @@ use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::{BackendMsg, Field};
 use crate::postgres::msg_iter::MsgIter;
+use crate::postgres::types::{parser_generator, ParseClosure};
 use std::collections::HashMap;
-
-type ParseClosure = Box<dyn FnMut(Option<Vec<u8>>, usize) -> String>;
 
 #[derive(Debug)]
 pub enum CasVal {
+    Bool(bool),
     Null,
-    Int(i32),
+    Int16(i16),
+    Int32(i32),
     Str(String),
+    Unparsed
 }
 
 // The messages arrive from Postgres in the following order:
@@ -24,8 +26,6 @@ pub enum CasVal {
 pub struct RowIter<'msgs> {
     msgs: &'msgs mut MsgIter<'msgs>,
     parse: ParseClosure,
-    // pub fields: Vec<Field>,
-    // pub dynamic_types: HashMap<i32, String>,
 }
 
 impl<'msgs> RowIter<'msgs> {
@@ -78,12 +78,4 @@ impl<'msgs> Iterator for RowIter<'msgs> {
                 }
             })
     }
-}
-
-fn parser_generator(fields: Vec<Field>) -> ParseClosure {
-    let f = move |bytes, i| {
-        let field: &Field = &fields[i];
-        field.name.clone()
-    };
-    Box::new(f)
 }

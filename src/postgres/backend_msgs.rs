@@ -184,7 +184,7 @@ pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
  */
 pub fn parse_data_row(
     msg: &[u8],
-    parse: &mut impl FnMut(Option<Vec<u8>>, usize) -> String,
+    parse: &mut impl FnMut(Option<&[u8]>, usize) -> (String, CasVal),
 ) -> HashMap<String, CasVal> {
     let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
     // skip discriminator, message size
@@ -199,21 +199,8 @@ pub fn parse_data_row(
         } else {
             Some(rdr.byte_slice(value_len as usize))
         };
-        let parsed: String = parse(value_bytes.map(|bs| bs.to_owned()), idx);
-        println!("{:?}", parsed);
-        // if value_len == -1 {
-        //     parsed.insert(fields[idx].name.clone(), CasVal::Null);
-        // } else {
-        //     // let bytes = rdr.byte
-        //     parsed.insert(
-        //         fields[idx].name.clone(),
-        //         types::parse_value(
-        //             &rdr.byte_slice(value_len as usize),
-        //             fields[idx].data_type_oid,
-        //             dynamic_types,
-        //         ),
-        //     );
-        // }
+        let (name, value) = parse(value_bytes, idx);
+        parsed.insert(name, value);
     }
     parsed
 }
