@@ -36,7 +36,7 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
         }
         Parser::String => {
             let str = std::str::from_utf8(bytes).expect("Value will be a valid UTF-8 string.");
-            CasVal::Str(str.to_owned()) // TODO: make CasVal::Str take a reference, might need to replace iterator
+            CasVal::Str(str.to_owned())
         }
         Parser::EWKB => {
             unimplemented!()
@@ -44,16 +44,6 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
     }
 }
 
-// use crate::postgres::row_iter::CasVal;
-// use std::collections::HashMap;
-//
-// pub fn parse_value(value: &[u8], oid: i32, dynamic_types: &HashMap<i32, String>) -> CasVal {
-//     let parser = built_in_types(oid).or_else(|| dynamic_types.get(&oid).and_then(runtime_types));
-//     // TODO: can I build a parser function instead of looking it up for every val? I could do it once built on the fields and the dynamic types.
-//     println!("{:?}", parser);
-//     CasVal::Null
-// }
-//
 fn parser_for_oid(oid: i32) -> Option<Parser> {
     match oid {
         16 => Some(Parser::Bool),    // bool
@@ -65,7 +55,10 @@ fn parser_for_oid(oid: i32) -> Option<Parser> {
         25 => Some(Parser::String),  // text
         26 => Some(Parser::Int32),   // oid
         194 => Some(Parser::String), // pg_node_tree (string representing an internal node tree)
-        _ => None,
+        _ => {
+            eprintln!("Unhandled oid {}.", oid);
+            None
+        },
     }
 }
 

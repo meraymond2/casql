@@ -1,18 +1,21 @@
 use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
 use crate::postgres::row_iter::RowIter;
+use serde::ser::SerializeSeq;
+use serde::ser::Serializer;
+use std::io::{BufWriter, Write};
 
-// TODO: Can I parse the data row within the RowIter, to avoid leaking the Postgres parsing outside of that module?
-// there is an issue that I can't return something that references the iterator Item, something like all items have to
-// have the same lifetime, whereas I'm trying to only use one item at a time. Maybe a struct that does the same thing
-// but isn't officially an iterator. I want a stream, not an iter. I'd also like to solve the partial borrow thing.
-// This is ok for now though
 pub fn write_json(rows: RowIter) -> Result<(), CasErr> {
-    // let fields = rows.fields.clone();
-    // let types = rows.dynamic_types.clone();
+    let stdout = std::io::stdout();
+    let handle = stdout.lock();
+    let mut buf_writer = BufWriter::new(handle);
+    let mut ser = serde_json::Serializer::new(&mut buf_writer);
+    let mut seq = ser.serialize_seq(None)?;
     for row in rows {
-        // let parsed = backend_msgs::parse_data_row(row, &fields, &types);
-        println!("ROW: {:?}", row);
+        seq.serialize_element(&row)?;
     }
+    seq.end()?;
+    buf_writer.write("\n".as_bytes())?;
+    buf_writer.flush()?;
     Ok(())
 }
