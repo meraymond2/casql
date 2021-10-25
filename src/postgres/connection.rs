@@ -4,8 +4,8 @@ use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::postgis::types::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
+use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
-use std::convert::TryInto;
 use std::io::Write;
 use std::net::TcpStream;
 
@@ -58,18 +58,21 @@ impl Conn {
         Ok(conn)
     }
 
-    // pub fn query(&mut self, query: String, params: Vec<String>) -> Result<(), CasErr> {
-    //     self.stream.write(&frontend_msgs::parse_msg(&query))?;
-    //     self.stream.write(&frontend_msgs::describe_msg())?;
-    //     self.stream.write(&frontend_msgs::bind_msg(params))?;
-    //     self.stream.write(&frontend_msgs::execute_msg())?;
-    //     self.stream.write(&frontend_msgs::sync_msg())?;
-    //     let mut resp = MsgIter::new(&mut self.stream);
-    //     let stdout = std::io::stdout();
-    //     let handle = stdout.lock();
-    //     let mut buffered_writer = BufWriter::new(handle);
-    //     JsonWriter::new(&mut resp, &self.dynamic_types, &mut buffered_writer).write_rows()
-    // }
+    pub fn query<F>(&mut self, query: String, params: Vec<String>, f: F) -> Result<(), CasErr>
+    where
+        F: FnOnce(RowIter) -> Result<(), CasErr>,
+    {
+        self.stream.write(&frontend_msgs::parse_msg(&query))?;
+        self.stream.write(&frontend_msgs::describe_msg())?;
+        self.stream.write(&frontend_msgs::bind_msg(
+            params.iter().map(|p| p.as_str()).collect(),
+        ))?;
+        self.stream.write(&frontend_msgs::execute_msg())?;
+        self.stream.write(&frontend_msgs::sync_msg())?;
+        let mut resp = MsgIter::new(&mut self.stream);
+        let rows = RowIter::from(&mut resp, self.dynamic_types.clone())?;
+        f(rows)
+    }
 
     fn send_startup(&mut self, user: &str, database: &str) -> Result<(), CasErr> {
         self.stream
@@ -139,7 +142,7 @@ impl Conn {
         self.stream.write(&frontend_msgs::execute_msg())?;
         self.stream.write(&frontend_msgs::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        let mut dynamic_types = &mut self.dynamic_types;
+        let dynamic_types = &mut self.dynamic_types;
         while let Some(msg) = resp.next() {
             match backend_msgs::type_of(&msg) {
                 BackendMsg::ErrorResponse => {

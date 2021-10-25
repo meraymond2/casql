@@ -3,6 +3,7 @@ mod cas_err;
 mod postgres;
 use crate::cas_err::CasErr;
 use postgres::connection::{Conn, ConnectionParams};
+mod json;
 
 fn main() {
     match exec_query() {
@@ -24,7 +25,6 @@ fn exec_query() -> Result<(), CasErr> {
         postgis: false,
     };
     let mut conn = Conn::connect(params)?;
-    // conn.query(String::from("SELECT * FROM pg_type"), vec![])
+    conn.query(String::from("SELECT * FROM pg_type"), vec![], json::write_json)
     // conn.query(String::from("SELECT * FROM points"), vec![])
-    Ok(())
 }

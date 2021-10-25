@@ -85,10 +85,9 @@ impl<'a> BinaryReader<'a> {
         s
     }
 
-    pub fn bytes(&mut self, len: usize) -> Vec<u8> {
+    pub fn byte_slice(&mut self, len: usize) -> &[u8] {
         let slice = &self.bytes[self.pos..(self.pos + len)];
-        let vec = slice.to_vec();
         self.skip(len);
-        vec
+        slice
     }
 }

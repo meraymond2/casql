@@ -1,5 +1,3 @@
-use crate::postgres::frontend_msgs::Element::CStr;
-
 /**
  * Int32 Length
  * Int16 Major Protocol Version
@@ -65,7 +63,7 @@ pub fn parse_msg(query: &str) -> Vec<u8> {
   name will be an empty, null-terminated string.
  */
 pub fn describe_msg() -> Vec<u8> {
-    build_msg(Some('d'), vec![Element::Byte('S' as u8), Element::CStr("")])
+    build_msg(Some('D'), vec![Element::Byte('S' as u8), Element::CStr("")])
 }
 
 /**

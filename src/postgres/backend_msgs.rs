@@ -1,4 +1,6 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
+use crate::postgres::row_iter::CasVal;
+use crate::postgres::types;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 
@@ -129,6 +131,87 @@ pub fn parse_error_response(bytes: &[u8]) -> ErrorResponse {
     }
 }
 
+#[derive(Clone, Debug)]
+pub struct Field {
+    pub name: String,
+    pub data_type_oid: i32,
+}
+
+/**
+ * Int8 'T'
+ * Int32 Length
+ * Int16 Number of Fields
+ *
+ * String Field Name
+ * Int32 Table OID
+ * Int16 Column #
+ * Int32 Data Type OID
+ * Int16 Data Type Size
+ * Int32 Type Modifier
+ * Int16 Format Code
+ */
+pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
+    let mut rdr = BinaryReader::from(bytes, ByteOrder::BigEndian);
+    // skip discriminator and message size
+    rdr.skip(5);
+    let field_count = rdr.i16();
+    let mut fields = Vec::with_capacity(field_count as usize);
+
+    for _ in 0..field_count {
+        let name = rdr.c_str();
+        // skip table_oid (i32) and column (i16)
+        rdr.skip(6);
+        let data_type_oid = rdr.i32();
+        // skip data_type_size (i16), type_modifier (i32) and format_code (i16)
+        rdr.skip(8);
+        fields.push({
+            Field {
+                name,
+                data_type_oid,
+            }
+        })
+    }
+    fields
+}
+
+/**
+ * Int8 'D'
+ * Int32 Length
+ * Int16 Number of Values
+ *
+ * Int32 Value Length (NULL is -1)
+ * Bytes Column Value
+ */
+pub fn parse_data_row(
+    msg: &[u8],
+    fields: &Vec<Field>,
+    dynamic_types: &HashMap<i32, String>,
+) -> HashMap<String, CasVal> {
+    let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
+    // skip discriminator, message size
+    rdr.skip(5);
+
+    let mut parsed = HashMap::new();
+    let value_count = rdr.i16() as usize;
+    for idx in 0..value_count {
+        let value_len = rdr.i32();
+        if value_len == -1 {
+            parsed.insert(fields[idx].name.clone(), CasVal::Null);
+        } else {
+            // let bytes = rdr.byte
+            parsed.insert(
+                fields[idx].name.clone(),
+                types::parse_value(
+                    &rdr.byte_slice(value_len as usize),
+                    fields[idx].data_type_oid,
+                    dynamic_types,
+                ),
+            );
+        }
+    }
+    parsed
+}
+
 #[derive(Debug)]
 pub struct PgType {
     pub name: String,
@@ -153,7 +236,7 @@ pub fn parse_type_lookup_row(msg: &[u8]) -> PgType {
     rdr.skip(7);
 
     let name_len = rdr.i32();
-    let name_bytes = rdr.bytes(name_len as usize);
+    let name_bytes = rdr.byte_slice(name_len as usize);
     let name = std::str::from_utf8(&name_bytes)
         .expect("Value will be a valid UTF-8 string.")
         .to_owned();
