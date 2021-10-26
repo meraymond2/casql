@@ -1,10 +1,10 @@
 use crate::cas_err::CasErr;
+use crate::cas_val::CasVal;
 use crate::postgres::backend_msgs;
-use crate::postgres::backend_msgs::{BackendMsg, Field};
+use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::types::{parser_generator, ParseClosure};
 use std::collections::HashMap;
-use crate::cas_val::CasVal;
 
 // The messages arrive from Postgres in the following order:
 // ParseComplete

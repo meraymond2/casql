@@ -11,6 +11,7 @@ pub fn parser_generator(fields: Vec<Field>, dynamic_types: HashMap<i32, String>)
         let parser = parser_for_oid(field.data_type_oid).or(dynamic_types
             .get(&field.data_type_oid)
             .and_then(parser_for_dynamic_type));
+
         if let Some(bytes) = maybe_bytes {
             let val = match parser {
                 Some(parser) => parse_value(bytes, parser),
