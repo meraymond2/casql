@@ -1,7 +1,6 @@
 use std::io::Read;
 use std::net::TcpStream;
 
-// TODO: this can probably be increased a bit
 const BUFFER_SIZE: usize = 1024;
 
 pub struct MsgIter<'stream> {

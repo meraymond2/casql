@@ -1,10 +1,12 @@
 use serde::Serialize;
+
+// https://datatracker.ietf.org/doc/html/rfc7946
 // This isn’t a complete implementation of the GeoJSON spec, but rather an imitation of the output
 // of ST_AsGeoJSON. Unlike ST_AsGeoJSON I always include the SRID if it’s set, whereas PostGIS
-// only includes it if it’s set and not the default 4326.
+// only includes it if it’s set and not the default 4326. I’m also including the 4th dimension,
+// because my goal is not to output correct geojson, but to reflect the data in the db.
 
-// TODO: coordinates (in a generic way?)
-// TODO: other types
+// TODO: other types besides Point
 
 #[derive(Debug, Serialize)]
 #[serde(untagged)]
@@ -19,7 +21,6 @@ pub enum Position {
 #[serde(untagged)]
 pub enum Coords {
     Point(Position),
-    LineString(Vec<Position>),
 }
 
 // Not worried about enforcing valid GeoJSON with types, just abstracting over the different geometries.
@@ -54,6 +55,7 @@ impl CRS {
 pub struct Properties {
     name: String,
 }
+
 #[derive(Debug, Serialize)]
 pub enum GeoJSONType {
     Point,

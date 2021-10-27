@@ -44,8 +44,7 @@ pub fn type_of(bytes: &[u8]) -> BackendMsg {
     }
 }
 
-// TODO: There are more fields that may or may not present, that I could add in later, and include
-// in the message if they exist.
+// There are more fields than this, and some optional fields, but this is a good start.
 pub struct ErrorResponse {
     code: String,
     severity: String,
@@ -54,7 +53,7 @@ pub struct ErrorResponse {
 
 impl Display for ErrorResponse {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {} ({})", self.severity, self.message, self.code)
+        write!(f, "[{}] {} ({})", self.severity, self.message, self.code)
     }
 }
 
