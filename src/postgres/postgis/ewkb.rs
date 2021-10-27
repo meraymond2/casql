@@ -1,5 +1,5 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
-use crate::postgres::postgis::geojson::{GeoJSON, GeoJSONType, CRS};
+use crate::postgres::postgis::geojson::{Coords, GeoJSON, GeoJSONType, Position, CRS};
 
 // #[derive(Debug)]
 // pub enum EWKB {
@@ -26,6 +26,7 @@ fn parse_point(bytes: &[u8]) -> GeoJSON {
     let order = byte_order(bytes[0]);
     let mut reader = BinaryReader::from(bytes, order);
     reader.skip(5); // skip order (u8) and point type (i32)
+    // TODO working, but should be refactored, maybe after lines or polys.
     let srid = match bytes[4] {
         0x00 => None,
         0x20 => Some(reader.i32()),
@@ -37,9 +38,31 @@ fn parse_point(bytes: &[u8]) -> GeoJSON {
         0xE0 => Some(reader.i32()),
         _ => unreachable!(),
     };
+    let coordinates = match bytes[4] {
+        0x00 => Coords::Point(Position::XY(reader.f64(), reader.f64())),
+        0x20 => Coords::Point(Position::XY(reader.f64(), reader.f64())),
+        0x40 => Coords::Point(Position::XYM(reader.f64(), reader.f64(), reader.f64())),
+        0x60 => Coords::Point(Position::XYM(reader.f64(), reader.f64(), reader.f64())),
+        0x80 => Coords::Point(Position::XYZ(reader.f64(), reader.f64(), reader.f64())),
+        0xA0 => Coords::Point(Position::XYZ(reader.f64(), reader.f64(), reader.f64())),
+        0xC0 => Coords::Point(Position::XYZM(
+            reader.f64(),
+            reader.f64(),
+            reader.f64(),
+            reader.f64(),
+        )),
+        0xE0 => Coords::Point(Position::XYZM(
+            reader.f64(),
+            reader.f64(),
+            reader.f64(),
+            reader.f64(),
+        )),
+        _ => unreachable!(),
+    };
     GeoJSON {
         tag: GeoJSONType::Point,
         crs: CRS::from(srid),
+        coordinates,
     }
 }
 //

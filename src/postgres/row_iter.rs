@@ -36,8 +36,8 @@ impl<'msgs> RowIter<'msgs> {
                 BackendMsg::RowDescription => {
                     fields = backend_msgs::parse_row_desc(&msg);
                 }
-                BackendMsg::BindComplete => {}
-                BackendMsg::DataRow => {
+                BackendMsg::BindComplete => {
+                    // This should come just before the first data row.
                     break;
                 }
                 _ => {

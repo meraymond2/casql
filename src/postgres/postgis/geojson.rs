@@ -7,11 +7,29 @@ use serde::Serialize;
 // TODO: other types
 
 #[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum Position {
+    XY(f64, f64),
+    XYZ(f64, f64, f64),
+    XYM(f64, f64, f64),
+    XYZM(f64, f64, f64, f64),
+}
+
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum Coords {
+    Point(Position),
+    LineString(Vec<Position>),
+}
+
+// Not worried about enforcing valid GeoJSON with types, just abstracting over the different geometries.
+#[derive(Debug, Serialize)]
 pub struct GeoJSON {
     #[serde(rename = "type")]
     pub tag: GeoJSONType,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub crs: Option<CRS>,
+    pub coordinates: Coords,
 }
 
 #[derive(Debug, Serialize)]
