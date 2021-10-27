@@ -42,6 +42,12 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
             let int = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
             CasVal::Int32(int)
         }
+        Parser::Int64 => {
+            let int = i64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            CasVal::Int64(int)
+        }
         Parser::String => {
             let str = std::str::from_utf8(bytes).expect("Value will be a valid UTF-8 string.");
             CasVal::Str(str.to_owned())
@@ -53,11 +59,13 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
     }
 }
 
+/// https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn parser_for_oid(oid: i32) -> Option<Parser> {
     match oid {
         16 => Some(Parser::Bool),    // bool
         18 => Some(Parser::String),  // char
         19 => Some(Parser::String),  // name
+        20 => Some(Parser::Int64),   // int8
         21 => Some(Parser::Int16),   // int2
         23 => Some(Parser::Int32),   // int4
         24 => Some(Parser::Int32),   // regproc (proc oid)
@@ -80,6 +88,7 @@ enum Parser {
     Bool,
     Int16,
     Int32,
+    Int64,
     String,
     EWKB,
 }

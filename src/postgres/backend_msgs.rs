@@ -24,68 +24,25 @@ pub enum BackendMsg {
 /// Identify the message type, without parsing the entire message.
 pub fn type_of(bytes: &[u8]) -> BackendMsg {
     match bytes[0] {
-        0x31 => BackendMsg::ParseComplete,
-        0x32 => BackendMsg::BindComplete,
-        0x43 => BackendMsg::Close,
-        0x44 => BackendMsg::DataRow,
-        0x45 => BackendMsg::ErrorResponse,
-        0x4B => BackendMsg::BackendKeyData,
-        0x52 => match bytes[8] {
-            0x00 => BackendMsg::AuthenticationOk,
-            0x03 => BackendMsg::AuthenticationCleartextPassword,
-            0x05 => BackendMsg::AuthenticationMD5Password,
+        49 => BackendMsg::ParseComplete,
+        50 => BackendMsg::BindComplete,
+        67 => BackendMsg::Close,
+        68 => BackendMsg::DataRow,
+        69 => BackendMsg::ErrorResponse,
+        75 => BackendMsg::BackendKeyData,
+        82 => match bytes[8] {
+            0 => BackendMsg::AuthenticationOk,
+            3 => BackendMsg::AuthenticationCleartextPassword,
+            5 => BackendMsg::AuthenticationMD5Password,
             _ => unimplemented!("R {}", bytes[8]),
         },
-        0x53 => BackendMsg::ParameterStatus,
-        0x54 => BackendMsg::RowDescription,
-        0x5A => BackendMsg::ReadyForQuery,
-        0x74 => BackendMsg::ParameterDescription,
+        83 => BackendMsg::ParameterStatus,
+        84 => BackendMsg::RowDescription,
+        90 => BackendMsg::ReadyForQuery,
+        116 => BackendMsg::ParameterDescription,
         _ => unimplemented!("{}", bytes[0]),
     }
 }
-//
-// #[derive(Debug)]
-// pub struct Field {
-//     pub name: String,
-//     pub data_type_oid: i32,
-// }
-//
-// /**
-//  * Int8 'T'
-//  * Int32 Length
-//  * Int16 Number of Fields
-//  *
-//  * String Field Name
-//  * Int32 Table OID
-//  * Int16 Column #
-//  * Int32 Data Type OID
-//  * Int16 Data Type Size
-//  * Int32 Type Modifier
-//  * Int16 Format Code
-//  */
-// pub fn parse_row_desc(bytes: Vec<u8>) -> Vec<Field> {
-//     let mut msg = BinaryMsg::from(bytes);
-//     // skip discriminator and message size
-//     msg.skip(5);
-//     let field_count = msg.i16();
-//     let mut fields = Vec::with_capacity(field_count as usize);
-//
-//     for _ in 0..field_count {
-//         let name = msg.c_str();
-//         // skip table_oid (i32) and column (i16)
-//         msg.skip(6);
-//         let data_type_oid = msg.i32();
-//         // skip data_type_size (i16), type_modifier (i32) and format_code (i16)
-//         msg.skip(8);
-//         fields.push({
-//             Field {
-//                 name,
-//                 data_type_oid,
-//             }
-//         })
-//     }
-//     fields
-// }
 
 // TODO: There are more fields that may or may not present, that I could add in later, and include
 // in the message if they exist.
