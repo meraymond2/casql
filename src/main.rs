@@ -26,10 +26,10 @@ fn exec_query() -> Result<(), CasErr> {
         postgis: true,
     };
     let mut conn = Conn::connect(params)?;
-    conn.query(String::from("SELECT * FROM pg_type"), vec![], json::write_json)
-    // conn.query(
-    //     String::from("SELECT * FROM points"),
-    //     vec![],
-    //     json::write_json,
-    // )
+    // conn.query(String::from("SELECT * FROM pg_type"), vec![], json::write_json)
+    conn.query(
+        String::from("SELECT * FROM points"),
+        vec![],
+        json::write_json,
+    )
 }

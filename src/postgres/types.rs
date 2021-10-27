@@ -11,6 +11,9 @@ pub fn parser_generator(fields: Vec<Field>, dynamic_types: HashMap<i32, String>)
         let parser = parser_for_oid(field.data_type_oid).or(dynamic_types
             .get(&field.data_type_oid)
             .and_then(parser_for_dynamic_type));
+        if let None = parser {
+            eprintln!("Unhandled oid {}.", field.data_type_oid);
+        }
 
         if let Some(bytes) = maybe_bytes {
             let val = match parser {
@@ -61,10 +64,7 @@ fn parser_for_oid(oid: i32) -> Option<Parser> {
         25 => Some(Parser::String),  // text
         26 => Some(Parser::Int32),   // oid
         194 => Some(Parser::String), // pg_node_tree (string representing an internal node tree)
-        _ => {
-            eprintln!("Unhandled oid {}.", oid);
-            None
-        }
+        _ => None,
     }
 }
 
