@@ -18,7 +18,7 @@ pub fn parser_generator(fields: Vec<Field>, dynamic_types: HashMap<i32, String>)
         if let Some(bytes) = maybe_bytes {
             let val = match parser {
                 Some(parser) => parse_value(bytes, parser),
-                None => CasVal::Unparsed,
+                None => CasVal::Unparsed("???"),
             };
             (field.name.clone(), val)
         } else {
@@ -62,16 +62,17 @@ fn parse_value(bytes: &[u8], parser: Parser) -> CasVal {
 /// https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn parser_for_oid(oid: i32) -> Option<Parser> {
     match oid {
-        16 => Some(Parser::Bool),    // bool
-        18 => Some(Parser::String),  // char
-        19 => Some(Parser::String),  // name
-        20 => Some(Parser::Int64),   // int8
-        21 => Some(Parser::Int16),   // int2
-        23 => Some(Parser::Int32),   // int4
-        24 => Some(Parser::Int32),   // regproc (proc oid)
-        25 => Some(Parser::String),  // text
-        26 => Some(Parser::Int32),   // oid
-        194 => Some(Parser::String), // pg_node_tree (string representing an internal node tree)
+        16 => Some(Parser::Bool),     // bool
+        18 => Some(Parser::String),   // char
+        19 => Some(Parser::String),   // name
+        20 => Some(Parser::Int64),    // int8
+        21 => Some(Parser::Int16),    // int2
+        23 => Some(Parser::Int32),    // int4
+        24 => Some(Parser::Int32),    // regproc (proc oid)
+        25 => Some(Parser::String),   // text
+        26 => Some(Parser::Int32),    // oid
+        194 => Some(Parser::String),  // pg_node_tree (string representing an internal node tree)
+        1043 => Some(Parser::String), // varchar
         _ => None,
     }
 }

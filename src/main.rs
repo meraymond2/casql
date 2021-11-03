@@ -26,10 +26,11 @@ fn exec_query() -> Result<(), CasErr> {
         postgis: true,
     };
     let mut conn = Conn::connect(params)?;
-    // conn.query(String::from("SELECT * FROM pg_type"), vec![], json::write_json)
-    conn.query(
-        String::from("SELECT * FROM points"),
-        vec![],
-        json::write_json,
-    )
+    conn.query(String::from("SELECT typname FROM pg_type"), vec![], json::write_json)
+    // conn.query(String::from("SELECT column_name AS field, data_type AS type, column_default AS default, is_nullable = 'YES' AS nullable FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = 'points';"), vec![], json::write_json)
+    // conn.query(
+    //     String::from("SELECT * FROM points"),
+    //     vec![],
+    //     json::write_json,
+    // )
 }

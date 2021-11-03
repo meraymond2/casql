@@ -11,5 +11,5 @@ pub enum CasVal {
     Int64(i64),
     Null,
     Str(String),
-    Unparsed,
+    Unparsed(&'static str),
 }

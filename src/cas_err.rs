@@ -1,10 +1,10 @@
+use std::convert::TryInto;
 use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::ErrorKind;
 
 #[derive(Debug)]
 pub enum CasErr {
-    JsonErr(String),
     IoBrokenPipe,
     IoConnRefused,
     IoErr(String),
@@ -36,6 +36,7 @@ impl From<io::Error> for CasErr {
 
 impl From<serde_json::Error> for CasErr {
     fn from(err: serde_json::Error) -> Self {
-        CasErr::JsonErr(err.to_string())
+        let io_err: std::io::Error = err.into();
+        io_err.into()
     }
 }
