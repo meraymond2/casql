@@ -14,7 +14,6 @@ pub enum CasErr {
 impl Display for CasErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            CasErr::JsonErr(msg) => write!(f, "JSON Error: {}", msg),
             CasErr::IoBrokenPipe => write!(f, ""), // ignore SIGPIPEs
             CasErr::IoConnRefused => write!(f, "IO Error: could not connect to database"),
             CasErr::IoErr(msg) => write!(f, "IO Error: {}", msg),
