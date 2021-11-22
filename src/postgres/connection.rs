@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
 
+#[derive(Debug)]
 pub struct ConnectionParams {
     pub host: String,
     pub user: String,
