@@ -62,13 +62,10 @@ pub fn save(name: String, params: PartialConnectionParams) -> Result<(), CasErr>
             HashMap::new()
         }
     };
-    let success_msg = format!("Connection {} saved.\n", &name);
+    let success_msg = format!("Connection {} saved.", &name);
     connection_map.insert(name, params);
     write_conns(connection_map)?;
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-    handle.write(success_msg.as_bytes())?;
-    Ok(())
+    writeln(&success_msg)
 }
 
 pub fn list() -> Result<(), CasErr> {
@@ -83,39 +80,45 @@ pub fn list() -> Result<(), CasErr> {
             handle.write("\n".as_bytes())?;
         }
     }
+    handle.flush()?;
     Ok(())
 }
 //
-// pub fn describe(name: String) -> Result<(), CasErr> {
-//     let connection_map = read_conns()?;
-//     match connection_map.get(&name) {
-//         Some(connection) => {
-//             println!("Connection {}:\n{}", name, connection);
-//             Ok(())
-//         }
-//         None => Err(CasErr::ConnNotFound),
-//     }
-// }
-//
-// pub fn load(name: String) -> Result<PartialConnOpts, CasErr> {
-//     let mut connection_map = read_conns()?;
-//     match connection_map.remove(&name) {
-//         Some(connection) => Ok(connection),
-//         None => Err(CasErr::ConnNotFound),
-//     }
-// }
-//
-// pub fn delete(name: String) -> Result<(), CasErr> {
-//     let mut connection_map = read_conns()?;
-//     match connection_map.remove(&name) {
-//         Some(_) => {
-//             write_conns(connection_map)?;
-//             println!("Connection deleted: {}", name);
-//             Ok(())
-//         }
-//         None => Err(CasErr::ConnNotFound),
-//     }
-// }
+pub fn describe(name: String) -> Result<(), CasErr> {
+    if let Some(connection_map) = read_conns()? {
+        match connection_map.get(&name) {
+            Some(connection) => writeln(&format!("Connection {}:\n{}", name, connection)),
+            None => Err(CasErr::ArgErr(format!("Connection {} not found.", name))),
+        }
+    } else {
+        Err(CasErr::ArgErr(format!("Connection {} not found.", name)))
+    }
+}
+
+pub fn load(name: String) -> Result<PartialConnectionParams, CasErr> {
+    if let Some(mut connection_map) = read_conns()? {
+        match connection_map.remove(&name) {
+            Some(connection) => Ok(connection),
+            None => Err(CasErr::ArgErr(format!("Connection {} not found.", name))),
+        }
+    } else {
+        Err(CasErr::ArgErr(format!("Connection {} not found.", name)))
+    }
+}
+
+pub fn delete(name: String) -> Result<(), CasErr> {
+    if let Some(mut connection_map) = read_conns()? {
+        match connection_map.remove(&name) {
+            Some(_) => {
+                write_conns(connection_map)?;
+                writeln(&format!("Connection deleted: {}", name))
+            }
+            None => Err(CasErr::ArgErr(format!("Connection {} not found.", name))),
+        }
+    } else {
+        Err(CasErr::ArgErr(format!("Connection {} not found.", name)))
+    }
+}
 
 fn config_dir_path() -> Result<path::PathBuf, CasErr> {
     let mut config_dir = dirs::config_dir().ok_or(CasErr::ConfigsErr(
@@ -130,4 +133,13 @@ fn config_path() -> Result<path::PathBuf, CasErr> {
         path.push(CONFIG_FILENAME);
         path
     })
+}
+
+fn writeln(s: &str) -> Result<(), CasErr> {
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+    handle.write(s.as_bytes())?;
+    handle.write("\n".as_bytes())?;
+    handle.flush()?;
+    Ok(())
 }
