@@ -4,6 +4,8 @@ use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::types::{parser_generator, ParseClosure};
+use serde::Serialize;
+use serde_with::serde_as;
 use std::collections::HashMap;
 
 // The messages arrive from Postgres in the following order:
@@ -18,6 +20,10 @@ pub struct RowIter<'msgs> {
     msgs: &'msgs mut MsgIter<'msgs>,
     parse: ParseClosure,
 }
+
+#[serde_as]
+#[derive(Debug, Serialize)]
+pub struct RowVals(#[serde_as(as = "HashMap<_, _>")] pub Vec<(String, CasVal)>);
 
 impl<'msgs> RowIter<'msgs> {
     pub fn from(
@@ -53,7 +59,7 @@ impl<'msgs> RowIter<'msgs> {
 }
 
 impl<'msgs> Iterator for RowIter<'msgs> {
-    type Item = Vec<(String, CasVal)>;
+    type Item = RowVals;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.msgs

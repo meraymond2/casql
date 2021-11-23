@@ -2,6 +2,7 @@ use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_val::CasVal;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
+use crate::postgres::row_iter::RowVals;
 
 #[derive(Debug)]
 pub enum BackendMsg {
@@ -140,7 +141,7 @@ pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
 pub fn parse_data_row(
     msg: &[u8],
     parse: &mut impl FnMut(Option<&[u8]>, usize) -> (String, CasVal),
-) -> Vec<(String, CasVal)> {
+) -> RowVals {
     let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
     // skip discriminator, message size
     rdr.skip(5);
@@ -156,7 +157,7 @@ pub fn parse_data_row(
         };
         parsed.push(parse(value_bytes, idx));
     }
-    parsed
+    RowVals(parsed)
 }
 
 #[derive(Debug)]
