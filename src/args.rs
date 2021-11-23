@@ -117,7 +117,6 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
         Some(conn_name) => merge_params(conn_name, supplied_params),
         None => validate_params(supplied_params),
     }?;
-    println!("{:?}", params);
     Ok(Cmd::Query(params, query))
 }
 
