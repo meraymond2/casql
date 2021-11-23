@@ -2,10 +2,14 @@ use crate::CasErr;
 use pico_args::Arguments;
 use serde::{Deserialize, Serialize};
 
-// TODO:
-// 1. help text
-// 2. other sub-commands
-// 3. once connection commands are done, merge loaded params with provided
+#[derive(Debug)]
+pub enum Cmd {
+    Help,
+    Query(ConnectionParams, String),
+    ConfigList,
+    ConfigSave(PartialConnectionParams, String),
+}
+
 #[derive(Debug)]
 pub struct ConnectionParams {
     pub host: String,
@@ -23,8 +27,17 @@ pub struct PartialConnectionParams {
     pub password: Option<String>,
     pub database: Option<String>,
     pub port: Option<u16>,
-    pub postgis: Option<bool>,
+    pub postgis: bool,
 }
+
+const HELP: &'static str = "--help";
+const HOST_FLAGS: [&'static str; 2] = ["-h", "--host"];
+const PORT_FLAGS: [&'static str; 2] = ["-p", "--port"];
+const USER_FLAGS: [&'static str; 2] = ["-U", "--username"];
+const PASSWORD_FLAGS: [&'static str; 2] = ["-W", "--password"];
+const DATABASE_FLAGS: [&'static str; 2] = ["-d", "--dbname"];
+const POSTGIS_FLAG: &'static str = "--postgis";
+const NAME_FLAGS: [&'static str; 2] = ["-n", "--name"];
 
 pub const HELP_TEXT: &str = "\
 casql
@@ -45,20 +58,6 @@ ARGS:
   <INPUT>
 ";
 
-const HELP: &'static str = "--help";
-const HOST_FLAGS: [&'static str; 2] = ["-h", "--host"];
-const PORT_FLAGS: [&'static str; 2] = ["-p", "--port"];
-const USER_FLAGS: [&'static str; 2] = ["-U", "--username"];
-const PASSWORD_FLAGS: [&'static str; 2] = ["-W", "--password"];
-const DATABASE_FLAGS: [&'static str; 2] = ["-d", "--dbname"];
-
-#[derive(Debug)]
-pub enum Cmd {
-    Help,
-    Query(ConnectionParams, String),
-    ConfigsList,
-}
-
 pub fn parse_args() -> Result<Cmd, CasErr> {
     let mut args = pico_args::Arguments::from_env();
     if args.contains(HELP) {
@@ -72,6 +71,11 @@ pub fn parse_args() -> Result<Cmd, CasErr> {
     }
 }
 
+pub fn print_help() -> Result<(), CasErr> {
+    eprintln!("{}", HELP_TEXT);
+    Ok(())
+}
+
 fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
     // Parse the flags
     let host: String = args.value_from_str(HOST_FLAGS)?;
@@ -79,6 +83,7 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
     let user: String = args.value_from_str(USER_FLAGS)?;
     let password: Option<String> = args.opt_value_from_str(PASSWORD_FLAGS)?;
     let database: Option<String> = args.opt_value_from_str(DATABASE_FLAGS)?;
+    let postgis: bool = args.contains(POSTGIS_FLAG);
     // then the query.
     let query = args.free_from_str().map_err(|err| {
         if let pico_args::Error::MissingArgument = err {
@@ -94,7 +99,7 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
             user,
             password,
             database,
-            postgis: false,
+            postgis,
         },
         query,
     ))
@@ -102,8 +107,30 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
 
 fn parse_conns(args: &mut Arguments) -> Result<Cmd, CasErr> {
     match args.subcommand().unwrap().as_deref() {
-        Some("list") => Ok(Cmd::ConfigsList),
+        Some("list") => Ok(Cmd::ConfigList),
+        Some("save") => parse_conn_save(args),
         None => Ok(Cmd::Help),
         _ => unimplemented!(),
     }
+}
+
+fn parse_conn_save(args: &mut Arguments) -> Result<Cmd, CasErr> {
+    let name: String = args.value_from_str(NAME_FLAGS)?;
+    let host: Option<String> = args.opt_value_from_str(HOST_FLAGS)?;
+    let port: Option<u16> = args.opt_value_from_str(PORT_FLAGS)?;
+    let user: Option<String> = args.opt_value_from_str(USER_FLAGS)?;
+    let password: Option<String> = args.opt_value_from_str(PASSWORD_FLAGS)?;
+    let database: Option<String> = args.opt_value_from_str(DATABASE_FLAGS)?;
+    let postgis: bool = args.contains(POSTGIS_FLAG);
+    Ok(Cmd::ConfigSave(
+        PartialConnectionParams {
+            host,
+            port,
+            user,
+            password,
+            database,
+            postgis,
+        },
+        name,
+    ))
 }
