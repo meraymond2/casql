@@ -1,5 +1,4 @@
 use pico_args::Error;
-use std::convert::TryInto;
 use std::fmt::{Display, Formatter};
 use std::io;
 use std::io::ErrorKind;
@@ -7,6 +6,7 @@ use std::io::ErrorKind;
 #[derive(Debug)]
 pub enum CasErr {
     ArgErr(String),
+    ConfigsErr(String),
     IoBrokenPipe,
     IoConnRefused,
     IoErr(String),
@@ -17,6 +17,7 @@ impl Display for CasErr {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             CasErr::ArgErr(msg) => write!(f, "{}", msg),
+            CasErr::ConfigsErr(msg) => write!(f, "Configs Error: {}", msg),
             CasErr::IoBrokenPipe => write!(f, ""), // ignore SIGPIPEs
             CasErr::IoConnRefused => write!(f, "IO Error: could not connect to database"),
             CasErr::IoErr(msg) => write!(f, "IO Error: {}", msg),

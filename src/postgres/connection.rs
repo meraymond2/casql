@@ -1,4 +1,5 @@
 use crate::cas_err::CasErr;
+use crate::args::ConnectionParams;
 use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
@@ -8,16 +9,6 @@ use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
-
-#[derive(Debug)]
-pub struct ConnectionParams {
-    pub host: String,
-    pub user: String,
-    pub password: Option<String>,
-    pub database: Option<String>,
-    pub port: Option<u16>,
-    pub postgis: bool,
-}
 
 #[derive(Debug)]
 pub struct Conn {

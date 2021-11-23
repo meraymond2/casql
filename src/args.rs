@@ -1,11 +1,30 @@
-use crate::cas_err::CasErr::ArgErr;
-use crate::{CasErr, ConnectionParams};
+use crate::CasErr;
 use pico_args::Arguments;
+use serde::{Deserialize, Serialize};
 
 // TODO:
 // 1. help text
 // 2. other sub-commands
 // 3. once connection commands are done, merge loaded params with provided
+#[derive(Debug)]
+pub struct ConnectionParams {
+    pub host: String,
+    pub user: String,
+    pub password: Option<String>,
+    pub database: Option<String>,
+    pub port: Option<u16>,
+    pub postgis: bool,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PartialConnectionParams {
+    pub host: Option<String>,
+    pub user: Option<String>,
+    pub password: Option<String>,
+    pub database: Option<String>,
+    pub port: Option<u16>,
+    pub postgis: Option<bool>,
+}
 
 pub const HELP_TEXT: &str = "\
 casql
@@ -37,6 +56,7 @@ const DATABASE_FLAGS: [&'static str; 2] = ["-d", "--dbname"];
 pub enum Cmd {
     Help,
     Query(ConnectionParams, String),
+    ConfigsList,
 }
 
 pub fn parse_args() -> Result<Cmd, CasErr> {
@@ -46,6 +66,7 @@ pub fn parse_args() -> Result<Cmd, CasErr> {
     }
     match args.subcommand().unwrap().as_deref() {
         Some("query") => parse_query(&mut args),
+        Some("conns") => parse_conns(&mut args),
         Some(other) => Err(CasErr::ArgErr(format!("Unrecognised command: {}", other))),
         None => Ok(Cmd::Help),
     }
@@ -77,4 +98,12 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
         },
         query,
     ))
+}
+
+fn parse_conns(args: &mut Arguments) -> Result<Cmd, CasErr> {
+    match args.subcommand().unwrap().as_deref() {
+        Some("list") => Ok(Cmd::ConfigsList),
+        None => Ok(Cmd::Help),
+        _ => unimplemented!(),
+    }
 }
