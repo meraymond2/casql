@@ -140,13 +140,13 @@ pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
 pub fn parse_data_row(
     msg: &[u8],
     parse: &mut impl FnMut(Option<&[u8]>, usize) -> (String, CasVal),
-) -> HashMap<String, CasVal> {
+) -> Vec<(String, CasVal)> {
     let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
     // skip discriminator, message size
     rdr.skip(5);
 
-    let mut parsed = HashMap::new();
     let value_count = rdr.i16() as usize;
+    let mut parsed = Vec::with_capacity(value_count);
     for idx in 0..value_count {
         let value_len = rdr.i32();
         let value_bytes = if value_len == -1 {
@@ -154,8 +154,7 @@ pub fn parse_data_row(
         } else {
             Some(rdr.byte_slice(value_len as usize))
         };
-        let (name, value) = parse(value_bytes, idx);
-        parsed.insert(name, value);
+        parsed.push(parse(value_bytes, idx));
     }
     parsed
 }

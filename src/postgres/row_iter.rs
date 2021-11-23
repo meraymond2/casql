@@ -53,7 +53,7 @@ impl<'msgs> RowIter<'msgs> {
 }
 
 impl<'msgs> Iterator for RowIter<'msgs> {
-    type Item = HashMap<String, CasVal>;
+    type Item = Vec<(String, CasVal)>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.msgs
