@@ -1,26 +1,15 @@
 [package]
 name = "casql"
 version = "0.1.0"
-authors = ["Michael Raymond <michael_raymond@fastmail.com>"]
+authors = []
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-chrono = "0.4"
-directories = "2.0.2"
-mysql = "17.0.0"
-postgres = { version = "0.15.2", features = ["with-chrono", "with-uuid", "with-serde_json"] }
-serde = "1.0.104"
-serde_json = "1.0.44"
-serde_derive = "1.0.104"
-toml = "0.5.5"
-uuid = "0.5"
+dirs = "4.0.0"
+md5 = "0.7.0"
+pico-args = { version = "0.4.2", default-features = false }
+serde = { version = "1.0.130", features = ["derive"] }
+serde_json = "1.0.68"
+serde_with = "1.11.0"
+toml = { version = "0.5.8", optional = false }
 
-[dependencies.clap]
-version = "3.0.0-beta.1"
-default-features = false
-features = [ "derive", "suggestions", "vec_map" ]
-
-[patch.crates-io]
-clap = { git = "https://github.com/clap-rs/clap.git" }

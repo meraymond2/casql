@@ -1,35 +1,39 @@
-mod casable;
-mod connections;
-mod errors;
-mod mysql;
-mod opts;
+mod args;
+mod binary_reader;
+mod cas_err;
+mod configs;
 mod postgres;
-mod query;
-mod sql_enum;
+use crate::args::{Cmd, ConnectionParams};
+use crate::cas_err::CasErr;
+use postgres::connection::Conn;
 
-use crate::opts::{Connection, Opt};
+mod cas_val;
+mod json;
 
 fn main() {
-  let res = match opts::parse_opts() {
-    Opt::Connection(subcmd) => match subcmd {
-      Connection::Save { conn_name, opts } => connections::save(conn_name, opts),
-      Connection::List => connections::list(),
-      Connection::Describe { conn_name } => connections::describe(conn_name),
-      Connection::Delete { conn_name } => connections::delete(conn_name),
-    },
-    Opt::Query {
-      conn_name,
-      conn_str,
-      opts,
-      query,
-    } => query::exec(conn_name, conn_str, opts, query),
-  };
-
-  std::process::exit(match res {
-    Ok(_) => 0,
-    Err(e) => {
-      eprintln!("{}", e);
-      1
+    match run() {
+        Ok(_) => std::process::exit(0),
+        Err(err) => {
+            eprintln!("{}", err);
+            std::process::exit(1);
+        }
     }
-  })
+}
+
+fn run() -> Result<(), CasErr> {
+    let args = args::parse_args()?;
+    match args {
+        Cmd::Help => args::print_help(),
+        Cmd::Query(conn_params, query) => exec_query(conn_params, query),
+        Cmd::ConfigList => configs::list(),
+        Cmd::ConfigSave(conn_params, name) => configs::save(name, conn_params),
+        Cmd::ConfigDelete(name) => configs::delete(name),
+        Cmd::ConfigDescribe(name) => configs::describe(name),
+    }?;
+    Ok(())
+}
+
+fn exec_query(params: ConnectionParams, query: String) -> Result<(), CasErr> {
+    let mut conn = Conn::connect(params)?;
+    conn.query(query, vec![], json::write_json)
 }
