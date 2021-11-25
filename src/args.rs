@@ -75,7 +75,7 @@ pub fn parse_args() -> Result<Cmd, CasErr> {
     if args.contains(HELP) {
         return Ok(Cmd::Help);
     }
-    match args.subcommand().unwrap().as_deref() {
+    match args.subcommand()?.as_deref() {
         Some("query") => parse_query(&mut args),
         Some("conns") => parse_conns(&mut args),
         Some(other) => Err(CasErr::ArgErr(format!("Unrecognised command: {}", other))),
@@ -121,7 +121,7 @@ fn parse_query(args: &mut Arguments) -> Result<Cmd, CasErr> {
 }
 
 fn parse_conns(args: &mut Arguments) -> Result<Cmd, CasErr> {
-    match args.subcommand().unwrap().as_deref() {
+    match args.subcommand()?.as_deref() {
         Some("list") => Ok(Cmd::ConfigList),
         Some("save") => parse_conn_save(args),
         Some("delete") => parse_conn_delete(args),
