@@ -5,4 +5,3 @@ mod json;
 mod msg_iter;
 pub mod postgis;
 pub mod row_iter;
-mod types;
