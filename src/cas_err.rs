@@ -11,6 +11,7 @@ pub enum CasErr {
     IoConnRefused,
     IoErr(String),
     PostgresErr(String),
+    Utf8Err(String),
 }
 
 impl Display for CasErr {
@@ -22,6 +23,7 @@ impl Display for CasErr {
             CasErr::IoConnRefused => write!(f, "IO Error: could not connect to database"),
             CasErr::IoErr(msg) => write!(f, "IO Error: {}", msg),
             CasErr::PostgresErr(msg) => write!(f, "Postgres Error: {}", msg),
+            CasErr::Utf8Err(msg) => write!(f, "UTF-8 Error: {}", msg),
         }
     }
 }
@@ -34,6 +36,12 @@ impl From<io::Error> for CasErr {
             ErrorKind::ConnectionRefused => CasErr::IoConnRefused,
             _ => CasErr::IoErr(err.to_string()),
         }
+    }
+}
+
+impl From<std::str::Utf8Error> for CasErr {
+    fn from(err: std::str::Utf8Error) -> Self {
+        CasErr::Utf8Err(err.to_string())
     }
 }
 

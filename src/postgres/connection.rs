@@ -4,6 +4,7 @@ use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
 use crate::postgres::msg_iter::MsgIter;
+use crate::postgres::json;
 use crate::postgres::postgis::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
@@ -54,7 +55,6 @@ impl Conn {
         &mut self,
         query: String,
         params: Vec<String>,
-        write_rows: impl FnOnce(RowIter) -> Result<(), CasErr>,
     ) -> Result<(), CasErr> {
         self.stream.write(&frontend_msgs::parse_msg(&query))?;
         self.stream.write(&frontend_msgs::describe_msg())?;
@@ -64,8 +64,8 @@ impl Conn {
         self.stream.write(&frontend_msgs::execute_msg())?;
         self.stream.write(&frontend_msgs::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
-        let rows = RowIter::from(&mut resp, self.dynamic_types.clone())?;
-        write_rows(rows)
+        let rows = RowIter::from(&mut resp)?;
+        json::write_rows(rows, &self.dynamic_types)
     }
 
     fn send_startup(&mut self, user: &str, database: &str) -> Result<(), CasErr> {

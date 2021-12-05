@@ -7,9 +7,6 @@ use crate::args::{Cmd, ConnectionParams};
 use crate::cas_err::CasErr;
 use postgres::connection::Conn;
 
-mod cas_val;
-mod json;
-
 fn main() {
     match run() {
         Ok(_) => std::process::exit(0),
@@ -35,5 +32,5 @@ fn run() -> Result<(), CasErr> {
 
 fn exec_query(params: ConnectionParams, query: String) -> Result<(), CasErr> {
     let mut conn = Conn::connect(params)?;
-    conn.query(query, vec![], json::write_json)
+    conn.query(query, vec![])
 }

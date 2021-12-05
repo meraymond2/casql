@@ -1,8 +1,6 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
-use crate::cas_val::CasVal;
 use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
-use crate::postgres::row_iter::RowVals;
 
 #[derive(Debug)]
 pub enum BackendMsg {
@@ -138,27 +136,27 @@ pub fn parse_row_desc(bytes: &[u8]) -> Vec<Field> {
  * Int32 Value Length (NULL is -1)
  * Bytes Column Value
  */
-pub fn parse_data_row(
-    msg: &[u8],
-    parse: &mut impl FnMut(Option<&[u8]>, usize) -> (String, CasVal),
-) -> RowVals {
-    let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
-    // skip discriminator, message size
-    rdr.skip(5);
-
-    let value_count = rdr.i16() as usize;
-    let mut parsed = Vec::with_capacity(value_count);
-    for idx in 0..value_count {
-        let value_len = rdr.i32();
-        let value_bytes = if value_len == -1 {
-            None
-        } else {
-            Some(rdr.byte_slice(value_len as usize))
-        };
-        parsed.push(parse(value_bytes, idx));
-    }
-    RowVals(parsed)
-}
+// pub fn parse_data_row(
+//     msg: &[u8],
+//     parse: &mut impl FnMut(Option<&[u8]>, usize) -> (String, CasVal),
+// ) -> RowVals {
+//     let mut rdr = BinaryReader::from(&msg, ByteOrder::BigEndian);
+//     // skip discriminator, message size
+//     rdr.skip(5);
+//
+//     let value_count = rdr.i16() as usize;
+//     let mut parsed = Vec::with_capacity(value_count);
+//     for idx in 0..value_count {
+//         let value_len = rdr.i32();
+//         let value_bytes = if value_len == -1 {
+//             None
+//         } else {
+//             Some(rdr.byte_slice(value_len as usize))
+//         };
+//         parsed.push(parse(value_bytes, idx));
+//     }
+//     RowVals(parsed)
+// }
 
 #[derive(Debug)]
 pub struct PgType {
