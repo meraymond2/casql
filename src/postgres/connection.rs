@@ -1,10 +1,10 @@
-use crate::cas_err::CasErr;
 use crate::args::ConnectionParams;
+use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
-use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::json;
+use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::postgis::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
@@ -51,11 +51,7 @@ impl Conn {
         Ok(conn)
     }
 
-    pub fn query(
-        &mut self,
-        query: String,
-        params: Vec<String>,
-    ) -> Result<(), CasErr> {
+    pub fn query(&mut self, query: String, params: Vec<String>) -> Result<(), CasErr> {
         self.stream.write(&frontend_msgs::parse_msg(&query))?;
         self.stream.write(&frontend_msgs::describe_msg())?;
         self.stream.write(&frontend_msgs::bind_msg(
