@@ -5,9 +5,9 @@ CREATE TABLE types_0_99
     char    pg_catalog.char, -- 18: single character — just ‘char’ creates a char(1) column, oid 1042
     name    name,            -- 19: 63-byte type for storing system identifiers
     int8    int8,            -- 20: ~18 digit integer, 8-byte storage
-    int2    int2,            -- 21: -32 thousand to 32 thousand, 2-byte storage
+    int2    int2,            -- 21: 32 thousand to 32 thousand, 2-byte storage
 --     int2vector int2vector, -- 22: array of int2, used in system tables — SELECT indkey FROM pg_index;
-    int4    int4,            -- 23: -2 billion to 2 billion integer, 4-byte storage
+    int4    int4,            -- 23: 2 billion to 2 billion integer, 4-byte storage
     regproc regproc,         -- 24: registered procedure
     text    text,            -- 25: variable-length string, no limit specified
     oid     oid,             -- 26: object identifier(oid), maximum 4 billion

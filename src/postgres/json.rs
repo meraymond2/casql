@@ -1,9 +1,9 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
+use crate::cas_err::CasErr;
 use crate::postgres::postgis::ewkb;
 use crate::postgres::row_iter::RowIter;
-use crate::CasErr;
 use std::collections::HashMap;
-use std::io::{BufWriter, Write};
+use std::io::Write;
 
 const LEFT_SQUARE: &[u8] = "[".as_bytes();
 const LEFT_BRACE: &[u8] = "{".as_bytes();
@@ -34,10 +34,14 @@ struct JsonField {
     parser: Parser,
 }
 
-pub fn write_rows(rows: RowIter, dynamic_types: &HashMap<i32, String>) -> Result<(), CasErr> {
-    let stdout = std::io::stdout();
-    let handle = stdout.lock();
-    let mut out = BufWriter::new(handle);
+pub fn write_rows<Out>(
+    rows: RowIter,
+    dynamic_types: &HashMap<i32, String>,
+    out: &mut Out,
+) -> Result<(), CasErr>
+where
+    Out: Write,
+{
     out.write(LEFT_SQUARE)?;
     let fields: Vec<JsonField> = rows
         .fields
@@ -54,7 +58,7 @@ pub fn write_rows(rows: RowIter, dynamic_types: &HashMap<i32, String>) -> Result
         } else {
             out.write(COMMA)?;
         }
-        write_row(row, &fields, &mut out)?;
+        write_row(row, &fields, out)?;
     }
     out.write(RIGHT_SQUARE)?;
     out.write(NEW_LINE)?;
