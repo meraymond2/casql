@@ -19,11 +19,13 @@ const NULL: &[u8] = "null".as_bytes();
 enum Parser {
     Array,
     Bool,
+    Bytes,
     Int16,
     Int32,
     Int64,
     String,
     EWKB,
+    Tid,
     Unknown,
 }
 
@@ -121,6 +123,9 @@ where
             let bool = bytes[0] == 1;
             serde_json::to_writer(out, &bool)?;
         }
+        Parser::Bytes => {
+            serde_json::to_writer(out, bytes)?;
+        }
         Parser::Int16 => {
             let int = i16::from_be_bytes([bytes[0], bytes[1]]);
             serde_json::to_writer(out, &int)?;
@@ -142,7 +147,19 @@ where
             let geom = ewkb::parse_geom(bytes);
             serde_json::to_writer(out, &geom)?;
         }
-        Parser::Unknown => {}
+        Parser::Tid => {
+            // ( i32, i16 )
+            let block = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            let offset = i16::from_be_bytes([bytes[4], bytes[5]]);
+            out.write(LEFT_SQUARE)?;
+            serde_json::to_writer(&mut (*out), &block)?;
+            out.write(COMMA)?;
+            serde_json::to_writer(&mut (*out), &offset)?;
+            out.write(RIGHT_SQUARE)?;
+        }
+        Parser::Unknown => {
+            serde_json::to_writer(out, "???")?;
+        }
     }
     Ok(())
 }
@@ -187,17 +204,24 @@ where
     Ok(())
 }
 
+// https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
     match oid {
         16 => Parser::Bool,     // bool
+        17 => Parser::Bytes,    // bytea
         18 => Parser::String,   // char
         19 => Parser::String,   // name
         20 => Parser::Int64,    // int8
         21 => Parser::Int16,    // int2
+        22 => Parser::Array,    // int2vector
         23 => Parser::Int32,    // int4
         24 => Parser::Int32,    // regproc (proc oid)
         25 => Parser::String,   // text
         26 => Parser::Int32,    // oid
+        27 => Parser::Tid,      // tid
+        28 => Parser::Int32,    // xid
+        29 => Parser::Int32,    // cid
+        30 => Parser::Array,    // oidvector
         194 => Parser::String,  // pg_node_tree (string representing an internal node tree)
         1007 => Parser::Array,  // int4[]
         1043 => Parser::String, // varchar
