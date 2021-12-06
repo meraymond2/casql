@@ -1,5 +1,5 @@
 use crate::configs;
-use crate::CasErr;
+use crate::cas_err::CasErr;
 use pico_args::Arguments;
 use serde::{Deserialize, Serialize};
 use std::fmt;

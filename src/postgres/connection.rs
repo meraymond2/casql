@@ -51,7 +51,15 @@ impl Conn {
         Ok(conn)
     }
 
-    pub fn query(&mut self, query: String, params: Vec<String>) -> Result<(), CasErr> {
+    pub fn query<Out>(
+        &mut self,
+        query: String,
+        params: Vec<String>,
+        out: &mut Out,
+    ) -> Result<(), CasErr>
+    where
+        Out: Write,
+    {
         self.stream.write(&frontend_msgs::parse_msg(&query))?;
         self.stream.write(&frontend_msgs::describe_msg())?;
         self.stream.write(&frontend_msgs::bind_msg(
@@ -61,7 +69,7 @@ impl Conn {
         self.stream.write(&frontend_msgs::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
         let rows = RowIter::from(&mut resp)?;
-        json::write_rows(rows, &self.dynamic_types)
+        json::write_rows(rows, &self.dynamic_types, out)
     }
 
     fn send_startup(&mut self, user: &str, database: &str) -> Result<(), CasErr> {
