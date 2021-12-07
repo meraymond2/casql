@@ -1,57 +1,77 @@
+-- Numbers --
 bool bool, -- 16: boolean, \'true\'/\'false\'
-bytea bytea, -- 17: variable-length string, binary values escaped
-char char, -- 18: single character
-name name, -- 19: 63-byte type for storing system identifiers
-int8 int8, -- 20: ~18 digit integer, 8-byte storage
 int2 int2, -- 21: -32 thousand to 32 thousand, 2-byte storage
-int2vector int2vector, -- 22: array of int2, used in system tables
 int4 int4, -- 23: -2 billion to 2 billion integer, 4-byte storage
-regproc regproc, -- 24: registered procedure
-text text, -- 25: variable-length string, no limit specified
-oid oid, -- 26: object identifier(oid), maximum 4 billion
-tid tid, -- 27: (block, offset), physical location of tuple
-xid xid, -- 28: transaction id
-cid cid, -- 29: command identifier type, sequence in transaction id
-oidvector oidvector, -- 30: array of oids, used in system tables
-pg_type pg_type, -- 71:
-pg_attribute pg_attribute, -- 75:
-pg_proc pg_proc, -- 81:
-pg_class pg_class, -- 83:
-json json, -- 114: JSON stored as text
-xml xml, -- 142: XML content
-pg_node_tree pg_node_tree, -- 194: string representing an internal node tree
-pg_ndistinct pg_ndistinct, -- 3361: multivariate ndistinct coefficients
-pg_dependencies pg_dependencies, -- 3402: multivariate dependencies
-pg_mcv_list pg_mcv_list, -- 5017: multivariate MCV list
-pg_ddl_command pg_ddl_command, -- 32: internal type for passing CollectedCommand
-xid8 xid8, -- 5069: full transaction id
-point point, -- 600: geometric point \'(x, y)\'
-lseg lseg, -- 601: geometric line segment \'(pt1,pt2)\'
-path path, -- 602: geometric path \'(pt1,...)\'
-box box, -- 603: geometric box \'(lower left,upper right)\'
-polygon polygon, -- 604: geometric polygon \'(pt1,...)\'
-line line, -- 628: geometric line
+int8 int8, -- 20: ~18 digit integer, 8-byte storage
 float4 float4, -- 700: single-precision floating point number, 4-byte storage
 float8 float8, -- 701: double-precision floating point number, 8-byte storage
-unknown unknown, -- 705: pseudo-type representing an undetermined type
-circle circle, -- 718: geometric circle \'(center,radius)\'
-money money, -- 790: monetary amounts, $d,ddd.cc
-macaddr macaddr, -- 829: XX:XX:XX:XX:XX:XX, MAC address
-inet inet, -- 869: IP address/netmask, host address, netmask optional
-cidr cidr, -- 650: network IP address/netmask, network address
-macaddr8 macaddr8, -- 774: XX:XX:XX:XX:XX:XX:XX:XX, MAC address
-aclitem aclitem, -- 1033: access control list
-bpchar bpchar, -- 1042: char(length), blank-padded string, fixed storage length
+int2vector int2vector, -- 22: array of int2, used in system tables
+numeric numeric, -- 1700: numeric(precision, decimal), arbitrary precision number
+
+/*
+-- Text --
+char char, -- 18: single character
+name name, -- 19: 63-byte type for storing system identifiers
+text text, -- 25: variable-length string, no limit specified
 varchar varchar, -- 1043: varchar(length), non-blank-padded string, variable storage length
+
+-- Binary --
+bytea bytea, -- 17: variable-length string, binary values escaped
+bit bit, -- 1560: fixed-length bit string
+varbit varbit, -- 1562: variable-length bit string
+
+-- Date/Time --
 date date, -- 1082: date
 time time, -- 1083: time of day
 timestamp timestamp, -- 1114: date and time
 timestamptz timestamptz, -- 1184: date and time with time zone
 interval interval, -- 1186: @ <number> <units>, time interval
 timetz timetz, -- 1266: time of day with time zone
-bit bit, -- 1560: fixed-length bit string
-varbit varbit, -- 1562: variable-length bit string
-numeric numeric, -- 1700: numeric(precision, decimal), arbitrary precision number
+
+-- Internal Ids --
+regproc regproc, -- 24: registered procedure
+oid oid, -- 26: object identifier(oid), maximum 4 billion
+tid tid, -- 27: (block, offset), physical location of tuple
+xid xid, -- 28: transaction id
+cid cid, -- 29: command identifier type, sequence in transaction id
+oidvector oidvector, -- 30: array of oids, used in system tables
+xid8 xid8, -- 5069: full transaction id
+
+-- Structured Data --
+json json, -- 114: JSON stored as text
+xml xml, -- 142: XML content
+uuid uuid, -- 2950: UUID datatype
+jsonb jsonb, -- 3802: Binary JSON
+jsonpath jsonpath, -- 4072: JSON path
+
+-- Postgres Geometries --
+point point, -- 600: geometric point \'(x, y)\'
+lseg lseg, -- 601: geometric line segment \'(pt1,pt2)\'
+path path, -- 602: geometric path \'(pt1,...)\'
+box box, -- 603: geometric box \'(lower left,upper right)\'
+polygon polygon, -- 604: geometric polygon \'(pt1,...)\'
+line line, -- 628: geometric line
+circle circle, -- 718: geometric circle \'(center,radius)\'
+
+-- Networking --
+macaddr macaddr, -- 829: XX:XX:XX:XX:XX:XX, MAC address
+inet inet, -- 869: IP address/netmask, host address, netmask optional
+cidr cidr, -- 650: network IP address/netmask, network address
+macaddr8 macaddr8, -- 774: XX:XX:XX:XX:XX:XX:XX:XX, MAC address
+
+pg_type pg_type, -- 71:
+pg_attribute pg_attribute, -- 75:
+pg_proc pg_proc, -- 81:
+pg_class pg_class, -- 83:
+pg_node_tree pg_node_tree, -- 194: string representing an internal node tree
+pg_ndistinct pg_ndistinct, -- 3361: multivariate ndistinct coefficients
+pg_dependencies pg_dependencies, -- 3402: multivariate dependencies
+pg_mcv_list pg_mcv_list, -- 5017: multivariate MCV list
+pg_ddl_command pg_ddl_command, -- 32: internal type for passing CollectedCommand
+unknown unknown, -- 705: pseudo-type representing an undetermined type
+money money, -- 790: monetary amounts, $d,ddd.cc
+aclitem aclitem, -- 1033: access control list
+bpchar bpchar, -- 1042: char(length), blank-padded string, fixed storage length
 refcursor refcursor, -- 1790: reference to cursor (portal name)
 regprocedure regprocedure, -- 2202: registered procedure (with args)
 regoper regoper, -- 2203: registered operator
@@ -61,15 +81,12 @@ regcollation regcollation, -- 4191: registered collation
 regtype regtype, -- 2206: registered type
 regrole regrole, -- 4096: registered role
 regnamespace regnamespace, -- 4089: registered namespace
-uuid uuid, -- 2950: UUID datatype
 pg_lsn pg_lsn, -- 3220: PostgreSQL LSN datatype
 tsvector tsvector, -- 3614: text representation for text search
 gtsvector gtsvector, -- 3642: GiST index internal text representation for text search
 tsquery tsquery, -- 3615: query representation for text search
 regconfig regconfig, -- 3734: registered text search configuration
 regdictionary regdictionary, -- 3769: registered text search dictionary
-jsonb jsonb, -- 3802: Binary JSON
-jsonpath jsonpath, -- 4072: JSON path
 txid_snapshot txid_snapshot, -- 2970: txid snapshot
 pg_snapshot pg_snapshot, -- 5038: snapshot
 int4range int4range, -- 3904: range of integers
@@ -192,3 +209,4 @@ tstzmultirange[] -- 6153: array of 4534
 datemultirange[] -- 6155: array of 4535
 int8multirange[] -- 6157: array of 4536
 cstring[] -- 1263: array of 2275
+*/
