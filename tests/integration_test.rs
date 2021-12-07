@@ -5,14 +5,19 @@ use casql::postgres::connection::Conn;
 
 // Requires local test database to be running.
 
+/*
+ bool | int2  |   int4   |     int8     | float4  |      float8       |           numeric
+------+-------+----------+--------------+---------+-------------------+-----------------------------
+ t    | 12345 | 12345678 | 123456790123 | 3.14159 | 3.141592653589793 | 3.1415926535897932384626433
+*/
 #[test]
-fn test_query() -> Result<(), CasErr> {
+fn test_numbers() -> Result<(), CasErr> {
     let mut conn = connect()?;
     let mut out = Vec::new();
-    conn.query("SELECT * FROM types_0_99".to_string(), vec![], &mut out)?;
+    conn.query("SELECT * FROM numbers".to_string(), vec![], &mut out)?;
     let expected = format!(
         "{}\n",
-        r#"[{"bool":true,"bytea":[0,1,10,255],"char":"A","name":"name is michael","int8":1234567890,"int2":12345,"int4":1234567890,"regproc":77,"text":"I’m a Postgres text value, how do you like me so far?","oid":77,"tid":[9,8],"xid":42,"cid":34}]"#
+        r#"[{"bool":true,"int2":12345,"int4":12345678,"int8":123456790123,"float4":"3.14159","float8":"3.141592653589793","numeric":"3.1415926535897932384626433"}]"#
     );
     assert_eq!(out, expected.as_bytes());
     Ok(())
