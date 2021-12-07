@@ -1,12 +1,19 @@
 -- Numbers --
-bool bool, -- 16: boolean, \'true\'/\'false\'
-int2 int2, -- 21: -32 thousand to 32 thousand, 2-byte storage
-int4 int4, -- 23: -2 billion to 2 billion integer, 4-byte storage
-int8 int8, -- 20: ~18 digit integer, 8-byte storage
-float4 float4, -- 700: single-precision floating point number, 4-byte storage
-float8 float8, -- 701: double-precision floating point number, 8-byte storage
-int2vector int2vector, -- 22: array of int2, used in system tables
-numeric numeric, -- 1700: numeric(precision, decimal), arbitrary precision number
+CREATE TABLE numbers
+(
+    bool    bool,   -- 16: boolean, \'true\'/\'false\'
+    int2    int2,   -- 21: -32 thousand to 32 thousand, 2-byte storage
+    int4    int4,   -- 23: -2 billion to 2 billion integer, 4-byte storage
+    int8    int8,   -- 20: ~18 digit integer, 8-byte storage
+    float4  float4, -- 700: single-precision floating point number, 4-byte storage
+    float8  float8, -- 701: double-precision floating point number, 8-byte storage
+    numeric numeric -- 1700: numeric(precision, decimal), arbitrary precision number
+);
+
+INSERT INTO numbers (bool, int2, int4, int8, float4, float8, numeric)
+VALUES (true, 12345, 12345678, 123456790123, 3.14159, 3.1415926535897932384626433,
+        3.1415926535897932384626433);
+
 
 /*
 -- Text --
@@ -59,6 +66,8 @@ inet inet, -- 869: IP address/netmask, host address, netmask optional
 cidr cidr, -- 650: network IP address/netmask, network address
 macaddr8 macaddr8, -- 774: XX:XX:XX:XX:XX:XX:XX:XX, MAC address
 
+
+int2vector int2vector, -- 22: array of int2, used in system tables
 pg_type pg_type, -- 71:
 pg_attribute pg_attribute, -- 75:
 pg_proc pg_proc, -- 81:
