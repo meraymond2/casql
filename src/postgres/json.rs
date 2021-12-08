@@ -19,6 +19,7 @@ const NULL: &[u8] = "null".as_bytes();
 enum Parser {
     Array,
     Bool,
+    BigNum,
     Bytes,
     Float32,
     Float64,
@@ -124,6 +125,39 @@ where
             out.write(LEFT_SQUARE)?;
             write_array_elements(&mut array, &counts, &parser, out)?;
             out.write(RIGHT_SQUARE)?;
+        }
+        Parser::BigNum => {
+            let mut bignum = BinaryReader::from(bytes, ByteOrder::BigEndian);
+            let digit_count = bignum.i16();
+            let mut weight = bignum.i16();
+            let flag = bignum.i16();
+            let scale = bignum.i16();
+
+            let mut s = String::with_capacity(4 * digit_count as usize + 10); // eh, some padding
+            if weight > 0 {
+                for _ in 0..digit_count {
+                    let d = bignum.i16();
+                    let ds = format!("{:04}", d);
+                    s.push_str(&ds);
+                    if weight == 0 {
+                        s.push('.');
+                    }
+                    weight = weight - 1;
+                }
+            } else {
+                s.push('.');
+                while weight < -1 {
+                    s.push_str("0000");
+                    weight = weight + 1;
+                }
+                for _ in 0..digit_count {
+                    let d = bignum.i16();
+                    let ds = format!("{:04}", d);
+                    s.push_str(&ds);
+                }
+            }
+            serde_json::to_writer(out, &s)?;
+            // serde_json::to_writer(out, bytes)?;
         }
         Parser::Bool => {
             let bool = bytes[0] == 1;
@@ -244,7 +278,7 @@ fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
         1007 => Parser::Array,  // int4[]
         1042 => Parser::String, // bpchar
         1043 => Parser::String, // varchar
-        1700 => Parser::Bytes,  // numeric TODO
+        1700 => Parser::BigNum, // numeric
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Parser::EWKB,
             _ => Parser::Unknown,

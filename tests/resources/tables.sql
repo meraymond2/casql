@@ -16,6 +16,15 @@ INSERT INTO numbers (bool, int2, int4, int8, float4, float8, numeric, zero_scale
 VALUES (true, 12345, 12345678, 123456790123, 3.14159, 3.1415926535897932384626433,
         3.1415926535897932384626433, 9007199254740991.9007199254740991, 3.1415926535897932384626433);
 
+CREATE TABLE decimals
+(
+    numeric     numeric,
+    zero_scale  numeric(10),
+    fixed_scale numeric(10, 5)
+);
+
+INSERT INTO decimals (numeric, zero_scale, fixed_scale)
+VALUES (1234567, 12345.54321, 12345.54321);
 
 -- Text --
 CREATE TABLE texts

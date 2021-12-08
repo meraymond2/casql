@@ -21,7 +21,7 @@ fn test_numbers() -> Result<(), CasErr> {
     );
     assert_eq!(out, expected.as_bytes());
     Ok(())
-}
+} // TODO: add a test for NaN and Infinitys
 
 /*
  char | fixed_char |   name   |  text  | varchar | bounded_varchar
