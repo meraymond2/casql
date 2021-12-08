@@ -23,6 +23,24 @@ fn test_numbers() -> Result<(), CasErr> {
     Ok(())
 }
 
+/*
+ char | fixed_char |   name   |  text  | varchar | bounded_varchar
+------+------------+----------+--------+---------+-----------------
+ O    | wee        | sleekrit | cowran | timrous | "beastie"
+*/
+#[test]
+fn test_texts() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query("SELECT * FROM texts".to_string(), vec![], &mut out)?;
+    let expected = format!(
+        "{}\n",
+        r#"[{"char":"O","fixed_char":"wee","name":"sleekrit","text":"cowran","varchar":"timrous","bounded_varchar":"\"beastie\""}]"#
+    );
+    assert_eq!(out, expected.as_bytes());
+    Ok(())
+}
+
 fn connect() -> Result<Conn, CasErr> {
     let params = args::ConnectionParams {
         host: "localhost".to_string(),

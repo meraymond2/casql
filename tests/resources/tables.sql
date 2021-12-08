@@ -15,13 +15,22 @@ VALUES (true, 12345, 12345678, 123456790123, 3.14159, 3.141592653589793238462643
         3.1415926535897932384626433);
 
 
-/*
 -- Text --
-char char, -- 18: single character
-name name, -- 19: 63-byte type for storing system identifiers
-text text, -- 25: variable-length string, no limit specified
-varchar varchar, -- 1043: varchar(length), non-blank-padded string, variable storage length
+CREATE TABLE texts
+(
+    -- just char as a type is implied to be char(1), oid 1042, not 18
+    char            pg_catalog.char, -- 18: single character
+    fixed_char      char(3),         -- 1042: bpchar, char(length), blank-padded string, fixed storage length
+    name            name,            -- 19: 63-byte type for storing system identifiers
+    text            text,            -- 25: variable-length string, no limit specified
+    varchar         varchar,         -- 1043: varchar(length), non-blank-padded string, variable storage length
+    bounded_varchar varchar(9)
+);
 
+INSERT INTO texts (char, fixed_char, name, text, varchar, bounded_varchar)
+VALUES ('O', 'wee', 'sleekrit', 'cowran', 'timrous', '"beastie"');
+
+/*
 -- Binary --
 bytea bytea, -- 17: variable-length string, binary values escaped
 bit bit, -- 1560: fixed-length bit string
@@ -80,7 +89,7 @@ pg_ddl_command pg_ddl_command, -- 32: internal type for passing CollectedCommand
 unknown unknown, -- 705: pseudo-type representing an undetermined type
 money money, -- 790: monetary amounts, $d,ddd.cc
 aclitem aclitem, -- 1033: access control list
-bpchar bpchar, -- 1042: char(length), blank-padded string, fixed storage length
+
 refcursor refcursor, -- 1790: reference to cursor (portal name)
 regprocedure regprocedure, -- 2202: registered procedure (with args)
 regoper regoper, -- 2203: registered operator
