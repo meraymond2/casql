@@ -20,6 +20,8 @@ enum Parser {
     Array,
     Bool,
     Bytes,
+    Float32,
+    Float64,
     Int16,
     Int32,
     Int64,
@@ -130,6 +132,16 @@ where
         Parser::Bytes => {
             serde_json::to_writer(out, bytes)?;
         }
+        Parser::Float32 => {
+            let float = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            serde_json::to_writer(out, &float)?;
+        }
+        Parser::Float64 => {
+            let float = f64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            serde_json::to_writer(out, &float)?;
+        }
         Parser::Int16 => {
             let int = i16::from_be_bytes([bytes[0], bytes[1]]);
             serde_json::to_writer(out, &int)?;
@@ -227,8 +239,12 @@ fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
         29 => Parser::Int32,    // cid
         30 => Parser::Array,    // oidvector
         194 => Parser::String,  // pg_node_tree (string representing an internal node tree)
+        700 => Parser::Float32, // float4
+        701 => Parser::Float64, // float8
         1007 => Parser::Array,  // int4[]
+        1042 => Parser::String, // bpchar
         1043 => Parser::String, // varchar
+        1700 => Parser::Bytes,  // numeric TODO
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Parser::EWKB,
             _ => Parser::Unknown,
