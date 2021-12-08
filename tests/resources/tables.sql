@@ -1,18 +1,20 @@
 -- Numbers --
 CREATE TABLE numbers
 (
-    bool    bool,   -- 16: boolean, \'true\'/\'false\'
-    int2    int2,   -- 21: -32 thousand to 32 thousand, 2-byte storage
-    int4    int4,   -- 23: -2 billion to 2 billion integer, 4-byte storage
-    int8    int8,   -- 20: ~18 digit integer, 8-byte storage
-    float4  float4, -- 700: single-precision floating point number, 4-byte storage
-    float8  float8, -- 701: double-precision floating point number, 8-byte storage
-    numeric numeric -- 1700: numeric(precision, decimal), arbitrary precision number
+    bool        bool,           -- 16: boolean, \'true\'/\'false\'
+    int2        int2,           -- 21: -32 thousand to 32 thousand, 2-byte storage
+    int4        int4,           -- 23: -2 billion to 2 billion integer, 4-byte storage
+    int8        int8,           -- 20: ~18 digit integer, 8-byte storage
+    float4      float4,         -- 700: single-precision floating point number, 4-byte storage
+    float8      float8,         -- 701: double-precision floating point number, 8-byte storage
+    numeric     numeric,        -- 1700: numeric(precision, decimal), arbitrary precision number
+    zero_scale  numeric(20),    -- 20 digit precision, 0 scale
+    fixed_scale numeric(25, 24) -- 25 digit precision, 24 digit scale
 );
 
-INSERT INTO numbers (bool, int2, int4, int8, float4, float8, numeric)
+INSERT INTO numbers (bool, int2, int4, int8, float4, float8, numeric, zero_scale, fixed_scale)
 VALUES (true, 12345, 12345678, 123456790123, 3.14159, 3.1415926535897932384626433,
-        3.1415926535897932384626433);
+        3.1415926535897932384626433, 9007199254740991.9007199254740991, 3.1415926535897932384626433);
 
 
 -- Text --
