@@ -25,6 +25,10 @@ CREATE TABLE decimals
 
 INSERT INTO decimals (numeric, zero_scale, fixed_scale)
 VALUES (1234567, 12345.54321, 12345.54321);
+INSERT INTO decimals (numeric, zero_scale, fixed_scale)
+VALUES (0.0000000002, 0.002, 0.000026);
+INSERT INTO decimals (numeric, zero_scale, fixed_scale)
+VALUES (-0.0000000002, -0.002, -0.000026);
 
 -- Text --
 CREATE TABLE texts

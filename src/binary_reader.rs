@@ -29,11 +29,10 @@ impl<'a> BinaryReader<'a> {
     }
 
     pub fn i16(&mut self) -> i16 {
-        let mut byte_arr: [u8; 2] = [0; 2];
-        byte_arr.copy_from_slice(&self.bytes[(self.pos)..(self.pos + 2)]);
+        let bytes = [self.bytes[self.pos], self.bytes[self.pos + 1]];
         let n = match self.order {
-            ByteOrder::BigEndian => i16::from_be_bytes(byte_arr),
-            ByteOrder::LittleEndian => i16::from_le_bytes(byte_arr),
+            ByteOrder::BigEndian => i16::from_be_bytes(bytes),
+            ByteOrder::LittleEndian => i16::from_le_bytes(bytes),
         };
         self.pos += 2;
         n

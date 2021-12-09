@@ -131,33 +131,58 @@ where
             let digit_count = bignum.i16();
             let mut weight = bignum.i16();
             let flag = bignum.i16();
-            let scale = bignum.i16();
-
-            let mut s = String::with_capacity(4 * digit_count as usize + 10); // eh, some padding
-            if weight > 0 {
-                for _ in 0..digit_count {
-                    let d = bignum.i16();
-                    let ds = format!("{:04}", d);
-                    s.push_str(&ds);
-                    if weight == 0 {
-                        s.push('.');
-                    }
-                    weight = weight - 1;
+            let mut scale = bignum.i16();
+            // If it’s zero, just write zero.
+            if digit_count == 0 {
+                out.write("0".as_bytes())?;
+                return Ok(());
+            }
+            // TODO: Infinity and NaN
+            // Add a negative sign if necessary.
+            if flag == 0x4000 {
+                out.write("-".as_bytes())?;
+            }
+            // Write integral part.
+            if weight >= 0 {
+                // Write the first block without leading zeros.
+                let first_block = bignum.i16();
+                serde_json::to_writer(&mut *out, &first_block)?;
+                weight -= 1;
+                // Write subsequent integral blocks as zero-padded.
+                while weight >= 0 {
+                    let block = bignum.i16();
+                    write!(out, "{:04}", block)?;
+                    weight -= 1;
                 }
             } else {
-                s.push('.');
-                while weight < -1 {
-                    s.push_str("0000");
-                    weight = weight + 1;
-                }
-                for _ in 0..digit_count {
-                    let d = bignum.i16();
-                    let ds = format!("{:04}", d);
-                    s.push_str(&ds);
-                }
+                out.write("0".as_bytes())?;
             }
-            serde_json::to_writer(out, &s)?;
-            // serde_json::to_writer(out, bytes)?;
+            // Write fractional part.
+            if scale > 0 {
+                out.write(".".as_bytes())?;
+            } else {
+                return Ok(())
+            }
+            // Add leading zeros if necessary, i.e. if the first digit block is more than 4 zeros
+            // after the decimal. If we’ve just written an integral part, the weight will be -1.
+            let zero_block_count = -1 - weight;
+            for _ in 0..zero_block_count {
+                out.write("0000".as_bytes())?;
+                scale -= 4;
+            }
+            // Write blocks with leading and trailing zeros if present.
+            while scale > 4 {
+                let block = bignum.i16();
+                write!(out, "{:04}", block)?;
+                scale -= 4;
+            }
+            // Write final block, with leading but without trailing zeros.
+            if scale > 0 {
+                let block = bignum.i16();
+                let digits = format!("{:04}", block);
+                let trimmed = &digits.as_bytes()[0..(scale as usize)];
+                out.write(trimmed)?;
+            }
         }
         Parser::Bool => {
             let bool = bytes[0] == 1;
