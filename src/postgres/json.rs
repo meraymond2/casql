@@ -13,7 +13,14 @@ const NEW_LINE: &[u8] = "\n".as_bytes();
 const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
 const COMMA: &[u8] = ",".as_bytes();
 const COLON: &[u8] = ":".as_bytes();
+const MINUS: &[u8] = "-".as_bytes();
 const NULL: &[u8] = "null".as_bytes();
+const NAN: &[u8] = "\"NaN\"".as_bytes();
+const INFINITY: &[u8] = "\"Infinity\"".as_bytes();
+const NEGATIVE_INFINITY: &[u8] = "\"-Infinity\"".as_bytes();
+const ZERO: &[u8] = "0".as_bytes();
+const FOUR_ZEROS: &[u8] = "0000".as_bytes();
+const DECIMAL: &[u8] = ".".as_bytes();
 
 #[derive(Debug)]
 enum Parser {
@@ -127,39 +134,57 @@ where
             out.write(RIGHT_SQUARE)?;
         }
         Parser::BigNum => {
+            // TODO: Tidy this up, and move it to a separate function.
             let mut bignum = BinaryReader::from(bytes, ByteOrder::BigEndian);
-            let digit_count = bignum.i16();
+            let mut digits = bignum.i16();
             let mut weight = bignum.i16();
             let flag = bignum.i16();
             let mut scale = bignum.i16();
+
+            // https://github.com/postgres/postgres/blob/5d08137076fd39694188ec4625013756aab889e1/src/interfaces/ecpg/include/pgtypes_numeric.h#L6
+            match flag {
+                0x4000 => {
+                    // Add a negative sign
+                    out.write(MINUS)?;
+                }
+                -16384 => {
+                    // 0xC000
+                    out.write(NAN)?;
+                    return Ok(());
+                }
+                -4096 => {
+                    // 0xF000
+                    out.write(NULL)?;
+                    return Ok(());
+                }
+                _ => {}
+            }
             // If it’s zero, just write zero.
-            if digit_count == 0 {
-                out.write("0".as_bytes())?;
+            if digits == 0 {
+                out.write(ZERO)?;
                 return Ok(());
             }
-            // TODO: Infinity and NaN
-            // Add a negative sign if necessary.
-            if flag == 0x4000 {
-                out.write("-".as_bytes())?;
-            }
+
             // Write integral part.
             if weight >= 0 {
                 // Write the first block without leading zeros.
                 let first_block = bignum.i16();
                 serde_json::to_writer(&mut *out, &first_block)?;
+                digits -= 1;
                 weight -= 1;
                 // Write subsequent integral blocks as zero-padded.
                 while weight >= 0 {
-                    let block = bignum.i16();
+                    let block = if digits > 0 { bignum.i16() } else { 0 };
                     write!(out, "{:04}", block)?;
+                    digits -= 1;
                     weight -= 1;
                 }
             } else {
-                out.write("0".as_bytes())?;
+                out.write(ZERO)?;
             }
             // Write fractional part.
             if scale > 0 {
-                out.write(".".as_bytes())?;
+                out.write(DECIMAL)?;
             } else {
                 return Ok(());
             }
@@ -167,18 +192,19 @@ where
             // after the decimal. If we’ve just written an integral part, the weight will be -1.
             let zero_block_count = -1 - weight;
             for _ in 0..zero_block_count {
-                out.write("0000".as_bytes())?;
+                out.write(FOUR_ZEROS)?;
                 scale -= 4;
             }
             // Write blocks with leading and trailing zeros if present.
             while scale > 4 {
-                let block = bignum.i16();
+                let block = if digits > 0 { bignum.i16() } else { 0 };
                 write!(out, "{:04}", block)?;
+                digits -= 1;
                 scale -= 4;
             }
             // Write final block, with leading but without trailing zeros.
             if scale > 0 {
-                let block = bignum.i16();
+                let block = if digits > 0 { bignum.i16() } else { 0 };
                 let digits = format!("{:04}", block);
                 let trimmed = &digits.as_bytes()[0..(scale as usize)];
                 out.write(trimmed)?;
@@ -205,12 +231,12 @@ where
             if float.is_finite() {
                 serde_json::to_writer(out, &float)?;
             } else if float.is_nan() {
-                out.write("\"NaN\"".as_bytes())?;
+                out.write(NAN)?;
             } else if float.is_infinite() {
                 if float.is_sign_negative() {
-                    out.write("\"-Infinity\"".as_bytes())?;
+                    out.write(NEGATIVE_INFINITY)?;
                 } else {
-                    out.write("\"Infinity\"".as_bytes())?;
+                    out.write(INFINITY)?;
                 }
             }
         }
@@ -221,12 +247,12 @@ where
             if float.is_finite() {
                 serde_json::to_writer(out, &float)?;
             } else if float.is_nan() {
-                out.write("\"NaN\"".as_bytes())?;
+                out.write(NAN)?;
             } else if float.is_infinite() {
                 if float.is_sign_negative() {
-                    out.write("\"-Infinity\"".as_bytes())?;
+                    out.write(NEGATIVE_INFINITY)?;
                 } else {
-                    out.write("\"Infinity\"".as_bytes())?;
+                    out.write(INFINITY)?;
                 }
             }
         }

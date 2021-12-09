@@ -29,12 +29,14 @@ CREATE TABLE numerics
     fixed_scale numeric(10, 5) -- 10 digit precision, 5 digit scale
 );
 
--- INSERT INTO numerics (numeric, zero_scale, fixed_scale)
--- VALUES (1234567, 12345.54321, 12345.54321);
--- INSERT INTO numerics (numeric, zero_scale, fixed_scale)
--- VALUES (0.0000000002, 0.002, 0.000026);
--- INSERT INTO numerics (numeric, zero_scale, fixed_scale)
--- VALUES (-0.0000000002, -0.002, -0.000026);
+INSERT INTO numerics (numeric, zero_scale, fixed_scale)
+VALUES (1234567, 12345.54321, 12345.54321),
+       (1, 2, 3),
+       (0.0000000002, 0.002, 0.000026),
+       (-0.0000000002, -0.002, -0.000026),
+       (100000000000, 1000000000, 10000),
+       (NULL, NULL, NULL),
+       ('NaN', 'NaN', 'NaN');
 
 -- Text --
 CREATE TABLE texts
