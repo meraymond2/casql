@@ -161,7 +161,7 @@ where
             if scale > 0 {
                 out.write(".".as_bytes())?;
             } else {
-                return Ok(())
+                return Ok(());
             }
             // Add leading zeros if necessary, i.e. if the first digit block is more than 4 zeros
             // after the decimal. If we’ve just written an integral part, the weight will be -1.
@@ -193,13 +193,42 @@ where
         }
         Parser::Float32 => {
             let float = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-            serde_json::to_writer(out, &float)?;
+            /*
+            TODO: move to readme eventually.
+            JSON doesn't include a way to indicate NaN, Infinity or -Infinity because JSON numbers
+            aren't tied to any particular implementation of number, floating point or otherwise.
+
+            serde_json serialises them to null, which makes sense, but for casql I would prefer to
+            retain more information, so I have decided to write them as strings for now. Different
+            languages will be able to parse different strings as floats, so this may cause issues.
+            */
+            if float.is_finite() {
+                serde_json::to_writer(out, &float)?;
+            } else if float.is_nan() {
+                out.write("\"NaN\"".as_bytes())?;
+            } else if float.is_infinite() {
+                if float.is_sign_negative() {
+                    out.write("\"-Infinity\"".as_bytes())?;
+                } else {
+                    out.write("\"Infinity\"".as_bytes())?;
+                }
+            }
         }
         Parser::Float64 => {
             let float = f64::from_be_bytes([
                 bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
             ]);
-            serde_json::to_writer(out, &float)?;
+            if float.is_finite() {
+                serde_json::to_writer(out, &float)?;
+            } else if float.is_nan() {
+                out.write("\"NaN\"".as_bytes())?;
+            } else if float.is_infinite() {
+                if float.is_sign_negative() {
+                    out.write("\"-Infinity\"".as_bytes())?;
+                } else {
+                    out.write("\"Infinity\"".as_bytes())?;
+                }
+            }
         }
         Parser::Int16 => {
             let int = i16::from_be_bytes([bytes[0], bytes[1]]);
