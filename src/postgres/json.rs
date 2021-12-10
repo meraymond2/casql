@@ -27,6 +27,7 @@ enum Parser {
     Array,
     Bool,
     BigNum,
+    BitString,
     Bytes,
     Float32,
     Float64,
@@ -210,6 +211,23 @@ where
                 out.write(trimmed)?;
             }
         }
+        Parser::BitString => {
+            let mut bit_str = BinaryReader::from(bytes, ByteOrder::BigEndian);
+            let mut bit_len = bit_str.i32();
+            out.write(DOUBLE_QUOTE)?;
+            while bit_len >= 8 {
+                let block = bit_str.u8();
+                write!(out, "{:08b}", block)?;
+                bit_len -= 8;
+            }
+            if bit_len > 0 {
+                let block = bit_str.u8();
+                let bits = format!("{:08b}", block);
+                let trimmed = &bits.as_bytes()[0..(bit_len as usize)];
+                out.write(trimmed)?;
+            }
+            out.write(DOUBLE_QUOTE)?;
+        }
         Parser::Bool => {
             let bool = bytes[0] == 1;
             serde_json::to_writer(out, &bool)?;
@@ -337,28 +355,30 @@ where
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
     match oid {
-        16 => Parser::Bool,     // bool
-        17 => Parser::Bytes,    // bytea
-        18 => Parser::String,   // char
-        19 => Parser::String,   // name
-        20 => Parser::Int64,    // int8
-        21 => Parser::Int16,    // int2
-        22 => Parser::Array,    // int2vector
-        23 => Parser::Int32,    // int4
-        24 => Parser::Int32,    // regproc (proc oid)
-        25 => Parser::String,   // text
-        26 => Parser::Int32,    // oid
-        27 => Parser::Tid,      // tid
-        28 => Parser::Int32,    // xid
-        29 => Parser::Int32,    // cid
-        30 => Parser::Array,    // oidvector
-        194 => Parser::String,  // pg_node_tree (string representing an internal node tree)
-        700 => Parser::Float32, // float4
-        701 => Parser::Float64, // float8
-        1007 => Parser::Array,  // int4[]
-        1042 => Parser::String, // bpchar
-        1043 => Parser::String, // varchar
-        1700 => Parser::BigNum, // numeric
+        16 => Parser::Bool,        // bool
+        17 => Parser::Bytes,       // bytea
+        18 => Parser::String,      // char
+        19 => Parser::String,      // name
+        20 => Parser::Int64,       // int8
+        21 => Parser::Int16,       // int2
+        22 => Parser::Array,       // int2vector
+        23 => Parser::Int32,       // int4
+        24 => Parser::Int32,       // regproc (proc oid)
+        25 => Parser::String,      // text
+        26 => Parser::Int32,       // oid
+        27 => Parser::Tid,         // tid
+        28 => Parser::Int32,       // xid
+        29 => Parser::Int32,       // cid
+        30 => Parser::Array,       // oidvector
+        194 => Parser::String,     // pg_node_tree (string representing an internal node tree)
+        700 => Parser::Float32,    // float4
+        701 => Parser::Float64,    // float8
+        1007 => Parser::Array,     // int4[]
+        1042 => Parser::String,    // bpchar
+        1043 => Parser::String,    // varchar
+        1560 => Parser::BitString, // bit
+        1562 => Parser::BitString, // varbit
+        1700 => Parser::BigNum,    // numeric
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Parser::EWKB,
             _ => Parser::Unknown,

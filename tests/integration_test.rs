@@ -95,6 +95,24 @@ fn test_texts() -> Result<(), CasErr> {
     Ok(())
 }
 
+/*
+                            bytea                             | bit |  octet   | varbit |                          bounded_varbit
+--------------------------------------------------------------+-----+----------+--------+------------------------------------------------------------------
+ \x5468657265e2809973206e6f2073756368207468696e67206173203221 | 1   | 00001010 | 10101  | 0000000000000000000000000000000000000000000000000000000000001000
+*/
+#[test]
+fn test_binaries() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query("SELECT * FROM binaries".to_string(), vec![], &mut out)?;
+    let expected = format!(
+        "[{}]\n",
+        r#"{"bytea":[84,104,101,114,101,226,128,153,115,32,110,111,32,115,117,99,104,32,116,104,105,110,103,32,97,115,32,50,33],"bit":"1","octet":"00001010","varbit":"10101","bounded_varbit":"0000000000000000000000000000000000000000000000000000000000001000"}"#
+    );
+    assert_eq!(out, expected.as_bytes());
+    Ok(())
+}
+
 fn connect() -> Result<Conn, CasErr> {
     let params = args::ConnectionParams {
         host: "localhost".to_string(),

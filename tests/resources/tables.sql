@@ -53,12 +53,21 @@ CREATE TABLE texts
 INSERT INTO texts (char, fixed_char, name, text, varchar, bounded_varchar)
 VALUES ('O', 'wee', 'sleekrit', 'cowran', 'timrous', '"beastie"');
 
-/*
 -- Binary --
-bytea bytea, -- 17: variable-length string, binary values escaped
-bit bit, -- 1560: fixed-length bit string
-varbit varbit, -- 1562: variable-length bit string
+CREATE TABLE binaries
+(
+    bytea          bytea,  -- 17: variable-length string, binary values escaped
+    bit            bit,    -- 1560: fixed-length bit string
+    octet          bit(8),
+    varbit         varbit, -- 1562: variable-length bit string
+    bounded_varbit varbit(64)
+);
 
+INSERT INTO binaries (bytea, bit, octet, varbit, bounded_varbit)
+VALUES ('\x5468657265E2809973206E6F2073756368207468696E67206173203221', B'1', B'00001010', B'10101',
+        B'0000000000000000000000000000000000000000000000000000000000001000')
+
+/*
 -- Date/Time --
 date date, -- 1082: date
 time time, -- 1083: time of day
