@@ -4,6 +4,7 @@ use crate::postgres::postgis::ewkb;
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
+use std::ops::Add;
 
 // TODO: this file is getting a bit long, and could stand to be a module
 
