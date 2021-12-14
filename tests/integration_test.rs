@@ -113,6 +113,38 @@ fn test_binaries() -> Result<(), CasErr> {
     Ok(())
 }
 
+/*
+     date
+---------------
+ 4713-01-01 BC
+ 0002-12-31
+ 1000-06-06
+ 1988-02-03
+ 2200-01-01
+ 5874897-12-31
+*/
+#[test]
+fn test_dates_and_times() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query(
+        "SELECT * FROM dates_and_times".to_string(),
+        vec![],
+        &mut out,
+    )?;
+    let expected = format!(
+        "[{},{},{},{},{},{}]\n",
+        r#"{"date":-4712-01-01}"#,
+        r#"{"date":0002-12-31}"#,
+        r#"{"date":1000-06-06}"#,
+        r#"{"date":1988-02-03}"#,
+        r#"{"date":2200-01-01}"#,
+        r#"{"date":5874897-12-31}"#,
+    );
+    assert_eq!(out, expected.as_bytes());
+    Ok(())
+}
+
 fn connect() -> Result<Conn, CasErr> {
     let params = args::ConnectionParams {
         host: "localhost".to_string(),

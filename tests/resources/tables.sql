@@ -65,16 +65,22 @@ CREATE TABLE binaries
 
 INSERT INTO binaries (bytea, bit, octet, varbit, bounded_varbit)
 VALUES ('\x5468657265E2809973206E6F2073756368207468696E67206173203221', B'1', B'00001010', B'10101',
-        B'0000000000000000000000000000000000000000000000000000000000001000')
+        B'0000000000000000000000000000000000000000000000000000000000001000');
+
+-- Date/Time --
+CREATE TABLE dates_and_times
+(
+    date        date        -- 1082: date
+--     time        time,        -- 1083: time of day
+--     timestamp   timestamp,   -- 1114: date and time
+--     timestamptz timestamptz, -- 1184: date and time with time zone
+--     interval    interval,    -- 1186: @ <number> <units>, time interval
+--     timetz      timetz       -- 1266: time of day with time zone
+);
+
+INSERT INTO dates_and_times (date) VALUES ('4713-01-1 BC'), ('0002-12-31'), ('1000-06-06'), ('1988-02-03'), ('2200-01-01'), ('5874897-12-31');
 
 /*
--- Date/Time --
-date date, -- 1082: date
-time time, -- 1083: time of day
-timestamp timestamp, -- 1114: date and time
-timestamptz timestamptz, -- 1184: date and time with time zone
-interval interval, -- 1186: @ <number> <units>, time interval
-timetz timetz, -- 1266: time of day with time zone
 
 -- Internal Ids --
 regproc regproc, -- 24: registered procedure
