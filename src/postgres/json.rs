@@ -41,6 +41,7 @@ enum Parser {
     String,
     EWKB,
     Tid,
+    TimeUnzoned,
     Unknown,
 }
 
@@ -325,6 +326,24 @@ where
             serde_json::to_writer(&mut (*out), &offset)?;
             out.write(RIGHT_SQUARE)?;
         }
+        Parser::TimeUnzoned => {
+            let mut microseconds = i64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            let hour_us = 3600000000;
+            let minute_us = 60000000;
+            let second_us = 1000000.0;
+
+            let hours = microseconds / hour_us;
+            microseconds -= hours * hour_us;
+            let minutes = microseconds / minute_us;
+            microseconds -= minutes * minute_us;
+            let seconds = (microseconds as f32) / second_us;
+            // This is a ridiculous hack, but I cannot figure out how to pad just the integral part
+            // of a floating point number, and I want to avoid an additional string allocation.
+            let padding = if seconds < 10.0 { "0" } else { "" };
+            write!(out, "{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
+        }
         Parser::Unknown => {
             serde_json::to_writer(out, "???")?;
         }
@@ -376,31 +395,32 @@ where
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
     // eprintln!("{:?}", oid);
     match oid {
-        16 => Parser::Bool,        // bool
-        17 => Parser::Bytes,       // bytea
-        18 => Parser::String,      // char
-        19 => Parser::String,      // name
-        20 => Parser::Int64,       // int8
-        21 => Parser::Int16,       // int2
-        22 => Parser::Array,       // int2vector
-        23 => Parser::Int32,       // int4
-        24 => Parser::Int32,       // regproc (proc oid)
-        25 => Parser::String,      // text
-        26 => Parser::Int32,       // oid
-        27 => Parser::Tid,         // tid
-        28 => Parser::Int32,       // xid
-        29 => Parser::Int32,       // cid
-        30 => Parser::Array,       // oidvector
-        194 => Parser::String,     // pg_node_tree (string representing an internal node tree)
-        700 => Parser::Float32,    // float4
-        701 => Parser::Float64,    // float8
-        1007 => Parser::Array,     // int4[]
-        1042 => Parser::String,    // bpchar
-        1043 => Parser::String,    // varchar
-        1082 => Parser::Date,      // date
-        1560 => Parser::BitString, // bit
-        1562 => Parser::BitString, // varbit
-        1700 => Parser::BigNum,    // numeric
+        16 => Parser::Bool,          // bool
+        17 => Parser::Bytes,         // bytea
+        18 => Parser::String,        // char
+        19 => Parser::String,        // name
+        20 => Parser::Int64,         // int8
+        21 => Parser::Int16,         // int2
+        22 => Parser::Array,         // int2vector
+        23 => Parser::Int32,         // int4
+        24 => Parser::Int32,         // regproc (proc oid)
+        25 => Parser::String,        // text
+        26 => Parser::Int32,         // oid
+        27 => Parser::Tid,           // tid
+        28 => Parser::Int32,         // xid
+        29 => Parser::Int32,         // cid
+        30 => Parser::Array,         // oidvector
+        194 => Parser::String,       // pg_node_tree (string representing an internal node tree)
+        700 => Parser::Float32,      // float4
+        701 => Parser::Float64,      // float8
+        1007 => Parser::Array,       // int4[]
+        1042 => Parser::String,      // bpchar
+        1043 => Parser::String,      // varchar
+        1082 => Parser::Date,        // date
+        1083 => Parser::TimeUnzoned, // time
+        1560 => Parser::BitString,   // bit
+        1562 => Parser::BitString,   // varbit
+        1700 => Parser::BigNum,      // numeric
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Parser::EWKB,
             _ => Parser::Unknown,
