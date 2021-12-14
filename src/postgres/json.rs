@@ -42,6 +42,7 @@ enum Parser {
     EWKB,
     Tid,
     TimeUnzoned,
+    TimeZoned,
     Unknown,
 }
 
@@ -344,6 +345,42 @@ where
             let padding = if seconds < 10.0 { "0" } else { "" };
             write!(out, "{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
         }
+        Parser::TimeZoned => {
+            // TODO: repeats the above, should be factored out.
+            let mut microseconds = i64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            let hour_us = 3600000000;
+            let minute_us = 60000000;
+            let second_us = 1000000.0;
+
+            let hours = microseconds / hour_us;
+            microseconds -= hours * hour_us;
+            let minutes = microseconds / minute_us;
+            microseconds -= minutes * minute_us;
+            let seconds = (microseconds as f32) / second_us;
+            // This is a ridiculous hack, but I cannot figure out how to pad just the integral part
+            // of a floating point number, and I want to avoid an additional string allocation.
+            let padding = if seconds < 10.0 { "0" } else { "" };
+            write!(out, "{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
+            // end repetition
+
+            let mut offset_seconds =
+                0 - i32::from_be_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]);
+            let offset_hours = offset_seconds / 3600;
+            offset_seconds -= offset_hours * 3600;
+            let offset_minutes = offset_seconds / 60;
+            offset_seconds -= offset_minutes * 60;
+            if offset_seconds > 0 {
+                write!(
+                    out,
+                    "{:+03}:{:02}:{:02}",
+                    offset_hours, offset_minutes, offset_seconds
+                )
+            } else {
+                write!(out, "{:+03}:{:02}", offset_hours, offset_minutes)
+            }?;
+        }
         Parser::Unknown => {
             serde_json::to_writer(out, "???")?;
         }
@@ -393,7 +430,7 @@ where
 
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
-    // eprintln!("{:?}", oid);
+    eprintln!("{:?}", oid);
     match oid {
         16 => Parser::Bool,          // bool
         17 => Parser::Bytes,         // bytea
@@ -418,6 +455,7 @@ fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
         1043 => Parser::String,      // varchar
         1082 => Parser::Date,        // date
         1083 => Parser::TimeUnzoned, // time
+        1266 => Parser::TimeZoned,   // timetz
         1560 => Parser::BitString,   // bit
         1562 => Parser::BitString,   // varbit
         1700 => Parser::BigNum,      // numeric
