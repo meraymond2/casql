@@ -53,6 +53,25 @@ impl<'a> BinaryReader<'a> {
         n
     }
 
+    pub fn i64(&mut self) -> i64 {
+        let bytes = [
+            self.bytes[self.pos],
+            self.bytes[self.pos + 1],
+            self.bytes[self.pos + 2],
+            self.bytes[self.pos + 3],
+            self.bytes[self.pos + 4],
+            self.bytes[self.pos + 5],
+            self.bytes[self.pos + 6],
+            self.bytes[self.pos + 7],
+        ];
+        let n = match self.order {
+            ByteOrder::BigEndian => i64::from_be_bytes(bytes),
+            ByteOrder::LittleEndian => i64::from_le_bytes(bytes),
+        };
+        self.pos += 8;
+        n
+    }
+
     pub fn f64(&mut self) -> f64 {
         let bytes = [
             self.bytes[self.pos],

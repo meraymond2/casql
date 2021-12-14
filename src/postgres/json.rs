@@ -38,6 +38,7 @@ enum Parser {
     Int16,
     Int32,
     Int64,
+    Interval,
     String,
     EWKB,
     Tid,
@@ -310,6 +311,37 @@ where
             ]);
             serde_json::to_writer(out, &int)?;
         }
+        Parser::Interval => {
+            // todo handle negatives
+            // select '2000-01-01'::date + '1 year - 1 day'::interval;
+            // '1 year - 1 day'
+            // is + 364 days
+            /*
+            But it's not really + 364 days, because it depends on the year. That's
+            why they're stored as 3 types, because they're variable.
+            */
+            let mut interval = BinaryReader::from(bytes, ByteOrder::BigEndian);
+            let mut microseconds = interval.i64();
+            let mut days = interval.i32();
+            let mut months = interval.i32();
+
+            let years = months / 12;
+            months -= years * 12;
+
+            let hour_us = 3600000000;
+            let minute_us = 60000000;
+            let second_us = 1000000.0;
+            let hours = microseconds / hour_us;
+            microseconds -= hours * hour_us;
+            let minutes = microseconds / minute_us;
+            microseconds -= minutes * minute_us;
+            let seconds = (microseconds as f32) / second_us;
+
+            let padding = if seconds < 10.0 { "0" } else { "" };
+
+            // P[YYYY]-[MM]-[DD]T[hh]:[mm]:[ss]
+            write!(out, "\"P{:04}-{:02}-{:02}T{:02}:{:02}:{}{}\"", years, months, days, hours, minutes, padding, seconds)?;
+        }
         Parser::String => {
             serde_json::to_writer(out, std::str::from_utf8(bytes)?)?;
         }
@@ -455,6 +487,7 @@ fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
         1043 => Parser::String,      // varchar
         1082 => Parser::Date,        // date
         1083 => Parser::TimeUnzoned, // time
+        1186 => Parser::Interval,    // interval
         1266 => Parser::TimeZoned,   // timetz
         1560 => Parser::BitString,   // bit
         1562 => Parser::BitString,   // varbit
