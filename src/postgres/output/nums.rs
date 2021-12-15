@@ -6,6 +6,9 @@ const NULL: &[u8] = "null".as_bytes();
 const ZERO: &[u8] = "0".as_bytes();
 const MINUS: &[u8] = "-".as_bytes();
 const DECIMAL: &[u8] = ".".as_bytes();
+const NAN: &[u8] = "\"NaN\"".as_bytes();
+const INFINITY: &[u8] = "\"Infinity\"".as_bytes();
+const NEGATIVE_INFINITY: &[u8] = "\"-Infinity\"".as_bytes();
 
 /// Given:
 /// u8: 0/1, false/true
@@ -81,14 +84,16 @@ where
 {
     let float = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
     if float.is_finite() {
-        serde_json::to_writer(out, &float)?;
+        let mut ryu_buf = ryu::Buffer::new();
+        let str = ryu_buf.format(float);
+        out.write(str.as_bytes())?;
     } else if float.is_nan() {
-        out.write("NaN".as_bytes())?;
+        out.write(NAN)?;
     } else if float.is_infinite() {
         if float.is_sign_negative() {
-            out.write("-Infinity".as_bytes())?;
+            out.write(NEGATIVE_INFINITY)?;
         } else {
-            out.write("Infinity".as_bytes())?;
+            out.write(INFINITY)?;
         }
     }
     Ok(())
@@ -113,14 +118,16 @@ where
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
     ]);
     if float.is_finite() {
-        serde_json::to_writer(out, &float)?;
+        let mut ryu_buf = ryu::Buffer::new();
+        let str = ryu_buf.format(float);
+        out.write(str.as_bytes())?;
     } else if float.is_nan() {
-        out.write("NaN".as_bytes())?;
+        out.write(NAN)?;
     } else if float.is_infinite() {
         if float.is_sign_negative() {
-            out.write("-Infinity".as_bytes())?;
+            out.write(NEGATIVE_INFINITY)?;
         } else {
-            out.write("Infinity".as_bytes())?;
+            out.write(INFINITY)?;
         }
     }
     Ok(())
@@ -152,7 +159,7 @@ where
         }
         -16384 => {
             // 0xC000
-            out.write("NaN".as_bytes())?;
+            out.write(NAN)?;
             return Ok(());
         }
         -4096 => {
@@ -172,7 +179,7 @@ where
     if weight >= 0 {
         // Write the first block without leading zeros.
         let first_block = bignum.i16();
-        serde_json::to_writer(&mut *out, &first_block)?;
+        itoap::write(&mut (*out), first_block)?;
         digits -= 1;
         weight -= 1;
         // Write subsequent integral blocks as zero-padded.

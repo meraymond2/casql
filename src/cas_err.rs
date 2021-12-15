@@ -45,13 +45,6 @@ impl From<std::str::Utf8Error> for CasErr {
     }
 }
 
-impl From<serde_json::Error> for CasErr {
-    fn from(err: serde_json::Error) -> Self {
-        let io_err: std::io::Error = err.into();
-        io_err.into()
-    }
-}
-
 impl From<pico_args::Error> for CasErr {
     fn from(err: pico_args::Error) -> Self {
         match err {
