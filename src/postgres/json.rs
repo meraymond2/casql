@@ -253,9 +253,13 @@ where
                     time::Date::from_calendar_date(2000, time::Month::January, 1)
                         .expect("Epoch is always valid date.");
                 let then = epoch.add(time::Duration::days(days));
+                out.write(DOUBLE_QUOTE)?;
                 out.write(then.to_string().as_bytes())?;
+                out.write(DOUBLE_QUOTE)?;
             } else {
+                out.write(DOUBLE_QUOTE)?;
                 out.write(post_epoch(days).as_bytes())?;
+                out.write(DOUBLE_QUOTE)?;
             }
         }
         Parser::Float32 => {
@@ -312,22 +316,22 @@ where
             serde_json::to_writer(out, &int)?;
         }
         Parser::Interval => {
-            // todo handle negatives
-            // select '2000-01-01'::date + '1 year - 1 day'::interval;
-            // '1 year - 1 day'
-            // is + 364 days
-            /*
-            But it's not really + 364 days, because it depends on the year. That's
-            why they're stored as 3 types, because they're variable.
-            */
+            // ISO 8601 doesn’t specify negative intervals, so this is a best effort for now. I
+            // can’t simplify all of the quantities because '1 year - 1 day' will be different
+            // depending on what starting date it is applied to. I can do some though, all years
+            // will have 12 months.
             let mut interval = BinaryReader::from(bytes, ByteOrder::BigEndian);
             let mut microseconds = interval.i64();
-            let mut days = interval.i32();
+            let days = interval.i32();
             let mut months = interval.i32();
+
+            if days == 0 && months == 0 && microseconds == 0 {
+                out.write("\"P0D\"".as_bytes())?;
+                return Ok(());
+            }
 
             let years = months / 12;
             months -= years * 12;
-
             let hour_us = 3600000000;
             let minute_us = 60000000;
             let second_us = 1000000.0;
@@ -337,10 +341,36 @@ where
             microseconds -= minutes * minute_us;
             let seconds = (microseconds as f32) / second_us;
 
-            let padding = if seconds < 10.0 { "0" } else { "" };
-
-            // P[YYYY]-[MM]-[DD]T[hh]:[mm]:[ss]
-            write!(out, "\"P{:04}-{:02}-{:02}T{:02}:{:02}:{}{}\"", years, months, days, hours, minutes, padding, seconds)?;
+            let mut duration_str = "\"P".to_owned();
+            if years != 0 {
+                duration_str.push_str(&years.to_string());
+                duration_str.push('Y');
+            };
+            if months != 0 {
+                duration_str.push_str(&months.to_string());
+                duration_str.push('M');
+            };
+            if days != 0 {
+                duration_str.push_str(&days.to_string());
+                duration_str.push('D');
+            };
+            if hours != 0 || minutes != 0 || seconds != 0.0 {
+                duration_str.push('T');
+            }
+            if hours != 0 {
+                duration_str.push_str(&hours.to_string());
+                duration_str.push('H');
+            };
+            if minutes != 0 {
+                duration_str.push_str(&minutes.to_string());
+                duration_str.push('M');
+            };
+            if seconds != 0.0 {
+                duration_str.push_str(&seconds.to_string());
+                duration_str.push('S');
+            };
+            duration_str.push('"');
+            out.write(duration_str.as_bytes())?;
         }
         Parser::String => {
             serde_json::to_writer(out, std::str::from_utf8(bytes)?)?;
@@ -366,16 +396,19 @@ where
             let hour_us = 3600000000;
             let minute_us = 60000000;
             let second_us = 1000000.0;
-
             let hours = microseconds / hour_us;
             microseconds -= hours * hour_us;
             let minutes = microseconds / minute_us;
             microseconds -= minutes * minute_us;
-            let seconds = (microseconds as f32) / second_us;
+            let seconds = (microseconds as f64) / second_us;
             // This is a ridiculous hack, but I cannot figure out how to pad just the integral part
             // of a floating point number, and I want to avoid an additional string allocation.
             let padding = if seconds < 10.0 { "0" } else { "" };
-            write!(out, "{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
+            write!(
+                out,
+                "\"{:02}:{:02}:{}{}\"",
+                hours, minutes, padding, seconds
+            )?;
         }
         Parser::TimeZoned => {
             // TODO: repeats the above, should be factored out.
@@ -394,7 +427,7 @@ where
             // This is a ridiculous hack, but I cannot figure out how to pad just the integral part
             // of a floating point number, and I want to avoid an additional string allocation.
             let padding = if seconds < 10.0 { "0" } else { "" };
-            write!(out, "{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
+            write!(out, "\"{:02}:{:02}:{}{}", hours, minutes, padding, seconds)?;
             // end repetition
 
             let mut offset_seconds =
@@ -406,11 +439,11 @@ where
             if offset_seconds > 0 {
                 write!(
                     out,
-                    "{:+03}:{:02}:{:02}",
+                    "{:+03}:{:02}:{:02}\"",
                     offset_hours, offset_minutes, offset_seconds
                 )
             } else {
-                write!(out, "{:+03}:{:02}", offset_hours, offset_minutes)
+                write!(out, "{:+03}:{:02}\"", offset_hours, offset_minutes)
             }?;
         }
         Parser::Unknown => {
@@ -462,7 +495,7 @@ where
 
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
-    eprintln!("{:?}", oid);
+    // eprintln!("{:?}", oid);
     match oid {
         16 => Parser::Bool,          // bool
         17 => Parser::Bytes,         // bytea
