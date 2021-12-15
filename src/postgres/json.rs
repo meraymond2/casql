@@ -42,6 +42,7 @@ enum Parser {
     String,
     EWKB,
     Tid,
+    Timestamp,
     TimeUnzoned,
     TimeZoned,
     Unknown,
@@ -389,6 +390,42 @@ where
             serde_json::to_writer(&mut (*out), &offset)?;
             out.write(RIGHT_SQUARE)?;
         }
+        Parser::Timestamp => {
+            let mut microseconds = i64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            // working
+            // let epoch = time::OffsetDateTime::from_unix_timestamp(946684800).unwrap();
+            // eprintln!("{}", epoch.to_string());
+            // let then = epoch.add(time::Duration::microseconds(microseconds));
+            // eprintln!("{:?}", then);
+
+            // experimental, also working
+            /*
+            TODO: tidy this up
+            - make module out of this file
+            - separate file for time stuff
+            - separate out time calculations from printing
+            so timestamp is just microseconds after 2000-01-01
+            // I'm curious if how it works in historical time with shifts and whatnot
+            */
+            // let hour_us = 3600000000;
+            // let days = microseconds / (24 * hour_us);
+            // microseconds -= (days * 24 * hour_us);
+            // eprintln!("days: {}", post_epoch(days));
+            //
+            // let minute_us = 60000000;
+            // let second_us = 1000000.0;
+            // let hours = microseconds / hour_us;
+            // microseconds -= hours * hour_us;
+            // let minutes = microseconds / minute_us;
+            // microseconds -= minutes * minute_us;
+            // let seconds = (microseconds as f64) / second_us;
+            // // This is a ridiculous hack, but I cannot figure out how to pad just the integral part
+            // // of a floating point number, and I want to avoid an additional string allocation.
+            // let padding = if seconds < 10.0 { "0" } else { "" };
+            // eprintln!("\"{:02}:{:02}:{}{}\"", hours, minutes, padding, seconds);
+        }
         Parser::TimeUnzoned => {
             let mut microseconds = i64::from_be_bytes([
                 bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
@@ -495,7 +532,7 @@ where
 
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
 fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
-    // eprintln!("{:?}", oid);
+    eprintln!("{:?}", oid);
     match oid {
         16 => Parser::Bool,          // bool
         17 => Parser::Bytes,         // bytea
@@ -520,11 +557,13 @@ fn find_parser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Parser {
         1043 => Parser::String,      // varchar
         1082 => Parser::Date,        // date
         1083 => Parser::TimeUnzoned, // time
-        1186 => Parser::Interval,    // interval
-        1266 => Parser::TimeZoned,   // timetz
-        1560 => Parser::BitString,   // bit
-        1562 => Parser::BitString,   // varbit
-        1700 => Parser::BigNum,      // numeric
+        1114 => Parser::Timestamp,   // timestamp
+        1184 => Parser::Timestamp, // timestamptz
+        1186 => Parser::Interval,  // interval
+        1266 => Parser::TimeZoned, // timetz
+        1560 => Parser::BitString, // bit
+        1562 => Parser::BitString, // varbit
+        1700 => Parser::BigNum,    // numeric
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Parser::EWKB,
             _ => Parser::Unknown,
