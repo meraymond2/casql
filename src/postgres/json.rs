@@ -3,26 +3,6 @@
 //     Out: Write,
 // {
 //     match parser {
-//         Parser::BitString => {
-//             let mut bit_str = BinaryReader::from(bytes, ByteOrder::BigEndian);
-//             let mut bit_len = bit_str.i32();
-//             out.write(DOUBLE_QUOTE)?;
-//             while bit_len >= 8 {
-//                 let block = bit_str.u8();
-//                 write!(out, "{:08b}", block)?;
-//                 bit_len -= 8;
-//             }
-//             if bit_len > 0 {
-//                 let block = bit_str.u8();
-//                 let bits = format!("{:08b}", block);
-//                 let trimmed = &bits.as_bytes()[0..(bit_len as usize)];
-//                 out.write(trimmed)?;
-//             }
-//             out.write(DOUBLE_QUOTE)?;
-//         }
-//         Parser::Bytes => {
-//             serde_json::to_writer(out, bytes)?;
-//         }
 //         Parser::Date => {
 //             // Dates are stored as an i32, representing days after 2000-01-01. The Rust time libraries
 //             // only handle +/- 10000 years. Calculating future dates is easy enough, but I’m not as sure
@@ -42,20 +22,6 @@
 //                 out.write(post_epoch(days).as_bytes())?;
 //                 out.write(DOUBLE_QUOTE)?;
 //             }
-//         }
-//         Parser::Int16 => {
-//             let int = i16::from_be_bytes([bytes[0], bytes[1]]);
-//             serde_json::to_writer(out, &int)?;
-//         }
-//         Parser::Int32 => {
-//             let int = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-//             serde_json::to_writer(out, &int)?;
-//         }
-//         Parser::Int64 => {
-//             let int = i64::from_be_bytes([
-//                 bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-//             ]);
-//             serde_json::to_writer(out, &int)?;
 //         }
 //         Parser::Interval => {
 //             // ISO 8601 doesn’t specify negative intervals, so this is a best effort for now. I
@@ -230,47 +196,6 @@
 //     }
 //     Ok(())
 // }
-//
-// fn write_array_elements<Out>(
-//     bytes: &mut BinaryReader,
-//     dimensions: &[i32],
-//     parser: &Parser,
-//     out: &mut Out,
-// ) -> Result<(), CasErr>
-// where
-//     Out: Write,
-// {
-//     if dimensions.len() == 1 {
-//         let mut first = true;
-//         for _ in 0..dimensions[0] {
-//             if first {
-//                 first = false
-//             } else {
-//                 out.write(COMMA)?;
-//             }
-//             let size = bytes.i32();
-//             if size == -1 {
-//                 out.write(NULL)?;
-//             } else {
-//                 write_value(bytes.byte_slice(size as usize), parser, out)?;
-//             }
-//         }
-//     } else {
-//         let mut first = true;
-//         for _ in 0..dimensions[0] {
-//             if first {
-//                 first = false
-//             } else {
-//                 out.write(COMMA)?;
-//             }
-//             out.write(LEFT_SQUARE)?;
-//             write_array_elements(bytes, &dimensions[1..dimensions.len()], parser, out)?;
-//             out.write(RIGHT_SQUARE)?;
-//         }
-//     }
-//     Ok(())
-// }
-//
 // fn post_epoch(days_in_future: i64) -> String {
 //     let mut year = 2000;
 //     let mut days = days_in_future;
