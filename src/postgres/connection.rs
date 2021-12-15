@@ -3,7 +3,7 @@ use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
-use crate::postgres::json;
+use crate::postgres::output;
 use crate::postgres::msg_iter::MsgIter;
 use crate::postgres::postgis::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
 use crate::postgres::row_iter::RowIter;
@@ -69,7 +69,7 @@ impl Conn {
         self.stream.write(&frontend_msgs::sync_msg())?;
         let mut resp = MsgIter::new(&mut self.stream);
         let rows = RowIter::from(&mut resp)?;
-        json::write_rows(rows, &self.dynamic_types, out)
+        output::write::write_rows(rows, &self.dynamic_types, out)
     }
 
     fn send_startup(&mut self, user: &str, database: &str) -> Result<(), CasErr> {
