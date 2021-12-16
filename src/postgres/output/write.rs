@@ -1,7 +1,7 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use crate::postgres::output::ser::{find_serialiser, Ser};
-use crate::postgres::output::{binary, nums, text, time};
+use crate::postgres::output::{binary, ekwb, nums, text, time};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
@@ -105,7 +105,7 @@ where
         Ser::Int64 => nums::serialise_i64(bytes, out),
         Ser::Interval => time::serialise_duration(bytes, out),
         Ser::String => text::serialise_str(bytes, out),
-        Ser::EWKB => todo!(),
+        Ser::EWKB => ekwb::serialise_geom(bytes, out),
         Ser::Tid => nums::serialise_tid(bytes, out),
         Ser::Timestamp => time::serialise_datetime(bytes, out),
         Ser::TimeUnzoned => time::serialise_time_unzoned(bytes, out),

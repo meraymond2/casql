@@ -118,13 +118,7 @@ impl Conn {
                     Err(CasErr::PostgresErr(err_msg.to_string()))?;
                 }
                 BackendMsg::AuthenticationOk => {}
-                BackendMsg::ParameterStatus => {
-                    let mut xyz = BinaryReader::from(&msg, ByteOrder::BigEndian);
-                    xyz.skip(5);
-
-                    eprintln!("{:?}", xyz.c_str());
-                    eprintln!("{:?}", xyz.c_str());
-                }
+                BackendMsg::ParameterStatus => {}
                 BackendMsg::BackendKeyData => {}
                 BackendMsg::ReadyForQuery => {
                     self.state = ConnectionState::ReadyForQuery;
