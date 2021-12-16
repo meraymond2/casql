@@ -70,19 +70,21 @@ VALUES ('\x5468657265E2809973206E6F2073756368207468696E67206173203221', B'1', B'
 -- Date/Time --
 CREATE TABLE dates_and_times
 (
-    date     date,     -- 1082: date
-    time     time,     -- 1083: time of day
---     timestamp   timestamp,   -- 1114: date and time
+    date      date,      -- 1082: date
+    time      time,      -- 1083: time of day
+    timestamp timestamp, -- 1114: date and time
 --     timestamptz timestamptz, -- 1184: date and time with time zone
-    interval interval, -- 1186: @ <number> <units>, time interval
-    timetz   timetz    -- 1266: time of day with time zone
+    interval  interval,  -- 1186: @ <number> <units>, time interval
+    timetz    timetz     -- 1266: time of day with time zone
 );
 
-INSERT INTO dates_and_times (date, time, interval, timetz)
-VALUES ('4713-01-1 BC', '04:05:06.789', '0', '04:05:06.789-8'),
-       ('0002-12-31', 'allballs', '1 year 2 months 3 days 4 hours 5 minutes 6 seconds ago', '04:05:06 PST'),
-       ('2200-01-01', '04:05 PM', '-13 months, 12 days, -13 minutes, 12.12 seconds', '04:05:06+03:02:01'),
-       ('5874897-12-31', '23:59:59.999999', '15 microseconds', '04:05:06.789Z');
+INSERT INTO dates_and_times (date, time, timestamp, interval, timetz)
+VALUES ('4713-01-1 BC', '04:05:06.789', '4713-01-1 04:05:06.789 BC', '0', '04:05:06.789-8'),
+       ('0002-12-31', 'allballs', '0002-12-31 00:00:00', '1 year 2 months 3 days 4 hours 5 minutes 6 seconds ago',
+        '04:05:06 PST'),
+       ('2200-01-01', '04:05 PM', '2200-01-01 04:05 PM', '-13 months, 12 days, -13 minutes, 12.12 seconds',
+        '04:05:06+03:02:01'),
+       ('5874897-12-31', '23:59:59.999999', '294276-12-31 23:59:59.999999', '15 microseconds', '04:05:06.789Z');
 
 /*
 

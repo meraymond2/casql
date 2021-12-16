@@ -1,7 +1,6 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use std::io::Write;
-use std::ops::Add;
 
 const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
 
@@ -57,7 +56,7 @@ pub fn serialise_time_unzoned<Out>(bytes: &[u8], out: &mut Out) -> Result<(), Ca
 where
     Out: Write,
 {
-    let mut microseconds = i64::from_be_bytes([
+    let microseconds = i64::from_be_bytes([
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
     ]);
     out.write(DOUBLE_QUOTE)?;
@@ -79,7 +78,7 @@ pub fn serialise_time_zoned<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasE
 where
     Out: Write,
 {
-    let mut microseconds = i64::from_be_bytes([
+    let microseconds = i64::from_be_bytes([
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
     ]);
     out.write(DOUBLE_QUOTE)?;
@@ -115,6 +114,24 @@ pub fn serialise_datetime<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr
 where
     Out: Write,
 {
+    let mut microseconds = i64::from_be_bytes([
+        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+    ]);
+    let us_per_day = 86400000000;
+    let mut days = microseconds / us_per_day;
+    microseconds -= days * us_per_day;
+
+    if microseconds.is_negative() {
+        days -= 1;
+        microseconds = microseconds + us_per_day;
+    }
+
+    out.write(DOUBLE_QUOTE)?;
+    write_date(days as i32, out)?;
+    out.write("T".as_bytes())?;
+    write_time(microseconds, out)?;
+    out.write("Z".as_bytes())?;
+    out.write(DOUBLE_QUOTE)?;
     Ok(())
 }
 
