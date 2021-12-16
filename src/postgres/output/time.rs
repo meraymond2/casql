@@ -109,7 +109,13 @@ where
 /// Writes:
 /// UTC datetime-string YYYY-MM-DDTHH:MM:SSZ.
 ///
-/// TODO: is timestamptz different if I change the system clock of the db image?
+/// For timestamptz, it is still stored internally as UTC, in microseconds. At insertion Postgres
+/// converts from the specified timezone to UTC. If no timezone is specified it uses the server time
+/// zone. At retrieval, psql will format the output using the server timezone, but it remains the
+/// same instant as the UTC, just expressed with an offset. I am choosing to ignore that practice
+/// because 1. I’m lazy and it’s less code to write and 2. it doesn’t make sense, because the
+/// server time zone is unrelated to the original input data’s time zone. It should be up to the
+/// client to decide with which timezone to interpret the timestamp. Everything is Zulu time.
 pub fn serialise_datetime<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr>
 where
     Out: Write,

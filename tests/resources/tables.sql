@@ -79,7 +79,7 @@ CREATE TABLE dates_and_times
 );
 
 INSERT INTO dates_and_times (date, time, timestamp, timestamptz, interval, timetz)
-VALUES ('4713-01-1 BC', '04:05:06.789', '4713-01-1 04:05:06.789 BC', '4713-01-1 04:05:06.789 BC', '0',
+VALUES ('4713-01-1 BC', '04:05:06.789', '4713-01-1 04:05:06.789 BC', '4713-01-1 04:05:06.789 BC -0:00', '0',
         '04:05:06.789-8'),
        ('0002-12-31', 'allballs', '0002-12-31 00:00:00', '0002-12-31 00:00:00 CET',
         '1 year 2 months 3 days 4 hours 5 minutes 6 seconds ago',
