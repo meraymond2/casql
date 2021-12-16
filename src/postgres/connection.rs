@@ -3,14 +3,13 @@ use crate::cas_err::CasErr;
 use crate::postgres::backend_msgs;
 use crate::postgres::backend_msgs::BackendMsg;
 use crate::postgres::frontend_msgs;
-use crate::postgres::output;
 use crate::postgres::msg_iter::MsgIter;
+use crate::postgres::output;
 use crate::postgres::postgis::{POSTGIS_TYPES, POSTGIS_TYPE_QUERY};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
-use crate::binary_reader::{BinaryReader, ByteOrder};
 
 #[derive(Debug)]
 pub struct Conn {
