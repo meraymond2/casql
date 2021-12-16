@@ -41,28 +41,13 @@ where
     out.write(LEFT_SQUARE)?;
     match bytes[1] {
         1 => {
-            write_coords(&mut rdr, &[coord_size], out)?;
+            write_coords(&mut rdr, 1, coord_size, out)?;
         }
         2 => {
-            let line_length = rdr.i32();
-            write_coords(&mut rdr, &[line_length, coord_size], out)?;
+            write_coords(&mut rdr, 2, coord_size, out)?;
         }
         3 => {
-            // TODO: can I change write_coords to find the outer dimension length so I can use it
-            // for polygons?
-            let mut first = true;
-            let line_count = rdr.i32();
-            for _ in 0..line_count {
-                if first {
-                    first = false
-                } else {
-                    out.write(COMMA)?;
-                }
-                let line_length = rdr.i32();
-                out.write(LEFT_SQUARE)?;
-                write_coords(&mut rdr, &[line_length, coord_size], out)?;
-                out.write(RIGHT_SQUARE)?;
-            }
+            write_coords(&mut rdr, 3, coord_size, out)?;
         }
         _ => {
             unimplemented!()
@@ -97,45 +82,38 @@ fn has_srid(flag: u8) -> bool {
 
 fn write_coords<Out>(
     bytes: &mut BinaryReader,
-    dimensions: &[i32],
+    n_dims: i32,
+    point_n_dims: i32,
     out: &mut Out,
 ) -> Result<(), CasErr>
 where
     Out: Write,
 {
-    if dimensions.len() == 1 {
+    if n_dims == 1 {
         let mut first = true;
-        for _ in 0..dimensions[0] {
+        for _ in 0..point_n_dims {
             if first {
                 first = false
             } else {
                 out.write(COMMA)?;
             }
-            write_f64(bytes.f64(), out)?;
+            write!(out, "{}", bytes.f64())?;
         }
     } else {
         let mut first = true;
-        for _ in 0..dimensions[0] {
+        // Unlike Postgres arrays, the sub-dimensions can be different lengths, so each line within
+        // a polygon begins with its own length.
+        let len = bytes.i32();
+        for _ in 0..len {
             if first {
                 first = false
             } else {
                 out.write(COMMA)?;
             }
             out.write(LEFT_SQUARE)?;
-            write_coords(bytes, &dimensions[1..dimensions.len()], out)?;
+            write_coords(bytes, n_dims - 1, point_n_dims, out)?;
             out.write(RIGHT_SQUARE)?;
         }
     }
-    Ok(())
-}
-
-/// Like serialise_f64, but ignoring the possibility of NaNs and Infinities.
-fn write_f64<Out>(float: f64, out: &mut Out) -> Result<(), CasErr>
-where
-    Out: Write,
-{
-    let mut ryu_buf = ryu::Buffer::new();
-    let str = ryu_buf.format(float);
-    out.write(str.as_bytes())?;
     Ok(())
 }
