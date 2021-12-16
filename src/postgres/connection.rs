@@ -10,6 +10,7 @@ use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
 use std::net::TcpStream;
+use crate::binary_reader::{BinaryReader, ByteOrder};
 
 #[derive(Debug)]
 pub struct Conn {
@@ -117,7 +118,13 @@ impl Conn {
                     Err(CasErr::PostgresErr(err_msg.to_string()))?;
                 }
                 BackendMsg::AuthenticationOk => {}
-                BackendMsg::ParameterStatus => {}
+                BackendMsg::ParameterStatus => {
+                    let mut xyz = BinaryReader::from(&msg, ByteOrder::BigEndian);
+                    xyz.skip(5);
+
+                    eprintln!("{:?}", xyz.c_str());
+                    eprintln!("{:?}", xyz.c_str());
+                }
                 BackendMsg::BackendKeyData => {}
                 BackendMsg::ReadyForQuery => {
                     self.state = ConnectionState::ReadyForQuery;
