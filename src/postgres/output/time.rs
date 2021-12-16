@@ -1,12 +1,35 @@
+use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use std::io::Write;
 use std::ops::Add;
 
 const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
-//             // Dates are stored as an i32, representing days after 2000-01-01. The Rust time libraries
-//             // only handle +/- 10000 years. Calculating future dates is easy enough, but I’m not as sure
-//             // about historical dates. Since Postgres only goes back to 4713 BC, I can use the time
-//             // crate for historical dates.
+
+struct Time {
+    hours: i8,
+    minutes: i8,
+    seconds: f64,
+}
+
+impl Time {
+    fn from(microseconds: i64) -> Self {
+        let mut us = microseconds;
+        let us_per_hour = 3600000000;
+        let us_per_minute = 60000000;
+        let us_per_second = 1000000.0;
+        let hours = microseconds / us_per_hour;
+        us -= hours * us_per_hour;
+        let minutes = us / us_per_minute;
+        us -= minutes * us_per_minute;
+        let seconds = (us as f64) / us_per_second;
+        Time {
+            hours: hours as i8,
+            minutes: minutes as i8,
+            seconds,
+        }
+    }
+}
+
 /// Given:
 /// i32: days after 2000-01-01, negative numbers are days before
 ///
@@ -34,6 +57,12 @@ pub fn serialise_time_unzoned<Out>(bytes: &[u8], out: &mut Out) -> Result<(), Ca
 where
     Out: Write,
 {
+    let mut microseconds = i64::from_be_bytes([
+        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+    ]);
+    out.write(DOUBLE_QUOTE)?;
+    write_time(microseconds, out)?;
+    out.write(DOUBLE_QUOTE)?;
     Ok(())
 }
 
@@ -50,6 +79,28 @@ pub fn serialise_time_zoned<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasE
 where
     Out: Write,
 {
+    let mut microseconds = i64::from_be_bytes([
+        bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+    ]);
+    out.write(DOUBLE_QUOTE)?;
+    write_time(microseconds, out)?;
+
+    let mut offset_seconds = -i32::from_be_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]);
+    let offset_hours = offset_seconds / 3600;
+    offset_seconds -= offset_hours * 3600;
+    let offset_minutes = offset_seconds / 60;
+    offset_seconds -= offset_minutes * 60;
+    if offset_seconds > 0 {
+        write!(
+            out,
+            "{:+03}:{:02}:{:02}",
+            offset_hours, offset_minutes, offset_seconds
+        )
+    } else {
+        write!(out, "{:+03}:{:02}", offset_hours, offset_minutes)
+    }?;
+
+    out.write(DOUBLE_QUOTE)?;
     Ok(())
 }
 
@@ -85,23 +136,52 @@ pub fn serialise_duration<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr
 where
     Out: Write,
 {
+    let mut interval = BinaryReader::from(bytes, ByteOrder::BigEndian);
+    let microseconds = interval.i64();
+    let days = interval.i32();
+    let mut months = interval.i32();
+
+    if days == 0 && months == 0 && microseconds == 0 {
+        out.write("\"P0D\"".as_bytes())?;
+        return Ok(());
+    }
+
+    let years = months / 12;
+    months -= years * 12;
+    let time = Time::from(microseconds);
+
+    let mut duration_str = "\"P".to_owned();
+    if years != 0 {
+        duration_str.push_str(&years.to_string());
+        duration_str.push('Y');
+    };
+    if months != 0 {
+        duration_str.push_str(&months.to_string());
+        duration_str.push('M');
+    };
+    if days != 0 {
+        duration_str.push_str(&days.to_string());
+        duration_str.push('D');
+    };
+    if microseconds != 0 {
+        duration_str.push('T');
+    }
+    if time.hours != 0 {
+        duration_str.push_str(&time.hours.to_string());
+        duration_str.push('H');
+    };
+    if time.minutes != 0 {
+        duration_str.push_str(&time.minutes.to_string());
+        duration_str.push('M');
+    };
+    if time.seconds != 0.0 {
+        duration_str.push_str(&time.seconds.to_string());
+        duration_str.push('S');
+    };
+    duration_str.push('"');
+    out.write(duration_str.as_bytes())?;
     Ok(())
 }
-
-// fn epoch_minus(days_in_past: i32) -> i32 {
-//     let mut year = 2000;
-//     let mut days = days_in_past;
-//     let chunks = days / 1460970;
-//     year -= chunks * 4000;
-//     days -= chunks * 1460970;
-//     while days >= -365 {
-//         let length = if leap_year(year) { 366 } else { 365 };
-//         year -= 1;
-//         days -= length
-//     }
-//     eprintln!("year: {}, days: {}", year, days);
-//     0
-// }
 
 /// Given the number of days to add to the Postgres epoch, calculate the date and print it. Does not
 /// print the double quotes for the date string, because it may occur within a larger datetime string.
@@ -157,6 +237,21 @@ fn leap_year(year: i32) -> bool {
     } else {
         true
     }
+}
+
+fn write_time<Out>(us_after_midnight: i64, out: &mut Out) -> Result<(), CasErr>
+where
+    Out: Write,
+{
+    let time = Time::from(us_after_midnight);
+    // Cannot set width of integral portion separately from precision, so have to do it manually.
+    let padding = if time.seconds < 10.0 { "0" } else { "" };
+    write!(
+        out,
+        "{:02}:{:02}:{}{}",
+        time.hours, time.minutes, padding, time.seconds
+    )?;
+    Ok(())
 }
 
 const MONTH_DAYS: [&str; 365] = [

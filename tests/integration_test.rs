@@ -19,7 +19,7 @@ fn test_integers() -> Result<(), CasErr> {
         "[{}]\n",
         r#"{"bool":true,"int2":12345,"int4":12345678,"int8":123456790123}"#
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 
@@ -43,7 +43,7 @@ fn test_floats() -> Result<(), CasErr> {
         r#"{"float4":"Infinity","float8":"Infinity"}"#,
         r#"{"float4":"-Infinity","float8":"-Infinity"}"#,
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 
@@ -73,7 +73,7 @@ fn test_numerics() -> Result<(), CasErr> {
         r#"{"numeric":null,"zero_scale":null,"fixed_scale":null}"#,
         r#"{"numeric":"NaN","zero_scale":"NaN","fixed_scale":"NaN"}"#,
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 
@@ -91,7 +91,7 @@ fn test_texts() -> Result<(), CasErr> {
         "[{}]\n",
         r#"{"char":"O","fixed_char":"wee","name":"sleekrit","text":"cowran","varchar":"timrous","bounded_varchar":"\"beastie\""}"#
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 
@@ -109,7 +109,7 @@ fn test_binaries() -> Result<(), CasErr> {
         "[{}]\n",
         r#"{"bytea":[84,104,101,114,101,226,128,153,115,32,110,111,32,115,117,99,104,32,116,104,105,110,103,32,97,115,32,50,33],"bit":"1","octet":"00001010","varbit":"10101","bounded_varbit":"0000000000000000000000000000000000000000000000000000000000001000"}"#
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 
@@ -137,7 +137,7 @@ fn test_dates_and_times() -> Result<(), CasErr> {
         r#"{"date":"2200-01-01","time":"16:05:00","interval":"P-1Y-1M12DT-12M-47.88S","timetz":"04:05:06+03:02:01"}"#,
         r#"{"date":"5874897-12-31","time":"23:59:59.999999","interval":"PT0.000015S","timetz":"04:05:06.789+00:00"}"#,
     );
-    assert_eq!(out, expected.as_bytes());
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())
 }
 

@@ -3,26 +3,6 @@
 //     Out: Write,
 // {
 //     match parser {
-//         Parser::Date => {
-//             // Dates are stored as an i32, representing days after 2000-01-01. The Rust time libraries
-//             // only handle +/- 10000 years. Calculating future dates is easy enough, but I’m not as sure
-//             // about historical dates. Since Postgres only goes back to 4713 BC, I can use the time
-//             // crate for historical dates.
-//             let days: i64 = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]) as i64;
-//             if days < 1 {
-//                 let epoch: time::Date =
-//                     time::Date::from_calendar_date(2000, time::Month::January, 1)
-//                         .expect("Epoch is always valid date.");
-//                 let then = epoch.add(time::Duration::days(days));
-//                 out.write(DOUBLE_QUOTE)?;
-//                 out.write(then.to_string().as_bytes())?;
-//                 out.write(DOUBLE_QUOTE)?;
-//             } else {
-//                 out.write(DOUBLE_QUOTE)?;
-//                 out.write(post_epoch(days).as_bytes())?;
-//                 out.write(DOUBLE_QUOTE)?;
-//             }
-//         }
 //         Parser::Interval => {
 //             // ISO 8601 doesn’t specify negative intervals, so this is a best effort for now. I
 //             // can’t simplify all of the quantities because '1 year - 1 day' will be different
