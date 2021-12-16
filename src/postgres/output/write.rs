@@ -1,7 +1,7 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use crate::postgres::output::ser::{find_serialiser, Ser};
-use crate::postgres::output::{binary, nums, text};
+use crate::postgres::output::{binary, nums, text, time};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
@@ -97,19 +97,19 @@ where
         Ser::BigNum => nums::serialise_bignum(bytes, out),
         Ser::BitString => binary::serialise_bitstring(bytes, out),
         Ser::Bytes => binary::serialise_bytes(bytes, out),
-        Ser::Date => todo!(),
+        Ser::Date => time::serialise_date(bytes, out),
         Ser::Float32 => nums::serialise_f32(bytes, out),
         Ser::Float64 => nums::serialise_f64(bytes, out),
         Ser::Int16 => nums::serialise_i16(bytes, out),
         Ser::Int32 => nums::serialise_i32(bytes, out),
         Ser::Int64 => nums::serialise_i64(bytes, out),
-        Ser::Interval => todo!(),
+        Ser::Interval => time::serialise_duration(bytes, out),
         Ser::String => text::serialise_str(bytes, out),
         Ser::EWKB => todo!(),
         Ser::Tid => todo!(),
-        Ser::Timestamp => todo!(),
-        Ser::TimeUnzoned => todo!(),
-        Ser::TimeZoned => todo!(),
+        Ser::Timestamp => time::serialise_datetime(bytes, out),
+        Ser::TimeUnzoned => time::serialise_time_unzoned(bytes, out),
+        Ser::TimeZoned => time::serialise_time_zoned(bytes, out),
         Ser::Unknown => todo!(),
     }
 }
