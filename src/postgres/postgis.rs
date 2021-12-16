@@ -1,6 +1,3 @@
-pub mod ewkb;
-pub mod geojson;
-
 // The list of Postgis types that are handled in query results, which excludes internal types.
 pub const POSTGIS_TYPES: [&'static str; 5] =
     ["geometry", "geography", "box2d", "box3d", "geometry_dump"];

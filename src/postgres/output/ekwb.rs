@@ -3,14 +3,8 @@ use crate::cas_err::CasErr;
 use std::io::Write;
 
 const LEFT_SQUARE: &[u8] = "[".as_bytes();
-const LEFT_BRACE: &[u8] = "{".as_bytes();
 const RIGHT_SQUARE: &[u8] = "]".as_bytes();
-const RIGHT_BRACE: &[u8] = "}".as_bytes();
-const NEW_LINE: &[u8] = "\n".as_bytes();
-const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
 const COMMA: &[u8] = ",".as_bytes();
-const COLON: &[u8] = ":".as_bytes();
-const NULL: &[u8] = "null".as_bytes();
 
 /// Given:
 ///
@@ -31,37 +25,31 @@ where
     } else {
         None
     };
+    let coord_size = match bytes[4] {
+        0x00 => 2, // XY without SRID
+        0x20 => 2, // XY with SRID
+        0x40 => 3, // XYM without SRID
+        0x60 => 3, // XYM with SRID
+        0x80 => 3, // XYZ without SRID
+        0xA0 => 3, // XYZ with SRID
+        0xC0 => 4, // XYZM without SRID
+        0xE0 => 4, // XYZM with SRID
+        _ => unreachable!(),
+    };
     // TODO: for now, just printing coords, add in the wrapper afterwards
+    out.write(LEFT_SQUARE)?;
     match bytes[1] {
-        1 => write_point_coords(bytes[4], &mut rdr, out),
-        // 2 => write_linestring_coords(bytes),
+        1 => {
+            write_coords(&mut rdr, &[coord_size], out)?;
+        }
+        2 => {
+            let line_length = rdr.i32();
+            write_coords(&mut rdr, &[line_length, coord_size], out)?;
+        }
         _ => {
             unimplemented!()
         }
     }
-}
-
-pub fn write_point_coords<Out>(
-    flag: u8,
-    bytes: &mut BinaryReader,
-    out: &mut Out,
-) -> Result<(), CasErr>
-where
-    Out: Write,
-{
-    out.write(LEFT_SQUARE)?;
-    let dims = match flag {
-        0x00 => [2], // XY without SRID
-        0x20 => [2], // XY with SRID
-        0x40 => [3], // XYM without SRID
-        0x60 => [3], // XYM with SRID
-        0x80 => [3], // XYZ without SRID
-        0xA0 => [3], // XYZ with SRID
-        0xC0 => [4], // XYZM without SRID
-        0xE0 => [4], // XYZM with SRID
-        _ => unreachable!(),
-    };
-    write_coords(bytes, &dims, out)?;
     out.write(RIGHT_SQUARE)?;
     Ok(())
 }
