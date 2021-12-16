@@ -3,79 +3,8 @@
 //     Out: Write,
 // {
 //     match parser {
-//         Parser::Interval => {
-//             // ISO 8601 doesn’t specify negative intervals, so this is a best effort for now. I
-//             // can’t simplify all of the quantities because '1 year - 1 day' will be different
-//             // depending on what starting date it is applied to. I can do some though, all years
-//             // will have 12 months.
-//             let mut interval = BinaryReader::from(bytes, ByteOrder::BigEndian);
-//             let mut microseconds = interval.i64();
-//             let days = interval.i32();
-//             let mut months = interval.i32();
-//
-//             if days == 0 && months == 0 && microseconds == 0 {
-//                 out.write("\"P0D\"".as_bytes())?;
-//                 return Ok(());
-//             }
-//
-//             let years = months / 12;
-//             months -= years * 12;
-//             let hour_us = 3600000000;
-//             let minute_us = 60000000;
-//             let second_us = 1000000.0;
-//             let hours = microseconds / hour_us;
-//             microseconds -= hours * hour_us;
-//             let minutes = microseconds / minute_us;
-//             microseconds -= minutes * minute_us;
-//             let seconds = (microseconds as f32) / second_us;
-//
-//             let mut duration_str = "\"P".to_owned();
-//             if years != 0 {
-//                 duration_str.push_str(&years.to_string());
-//                 duration_str.push('Y');
-//             };
-//             if months != 0 {
-//                 duration_str.push_str(&months.to_string());
-//                 duration_str.push('M');
-//             };
-//             if days != 0 {
-//                 duration_str.push_str(&days.to_string());
-//                 duration_str.push('D');
-//             };
-//             if hours != 0 || minutes != 0 || seconds != 0.0 {
-//                 duration_str.push('T');
-//             }
-//             if hours != 0 {
-//                 duration_str.push_str(&hours.to_string());
-//                 duration_str.push('H');
-//             };
-//             if minutes != 0 {
-//                 duration_str.push_str(&minutes.to_string());
-//                 duration_str.push('M');
-//             };
-//             if seconds != 0.0 {
-//                 duration_str.push_str(&seconds.to_string());
-//                 duration_str.push('S');
-//             };
-//             duration_str.push('"');
-//             out.write(duration_str.as_bytes())?;
-//         }
-//         Parser::String => {
-//             serde_json::to_writer(out, std::str::from_utf8(bytes)?)?;
-//         }
-//         Parser::EWKB => {
-//             let geom = ewkb::parse_geom(bytes);
-//             serde_json::to_writer(out, &geom)?;
-//         }
 //         Parser::Tid => {
-//             // ( i32, i16 )
-//             let block = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
-//             let offset = i16::from_be_bytes([bytes[4], bytes[5]]);
-//             out.write(LEFT_SQUARE)?;
-//             serde_json::to_writer(&mut (*out), &block)?;
-//             out.write(COMMA)?;
-//             serde_json::to_writer(&mut (*out), &offset)?;
-//             out.write(RIGHT_SQUARE)?;
+
 //         }
 //         Parser::Timestamp => {
 //             let mut microseconds = i64::from_be_bytes([

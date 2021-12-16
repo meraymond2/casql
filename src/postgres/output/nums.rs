@@ -2,6 +2,9 @@ use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use std::io::Write;
 
+const LEFT_SQUARE: &[u8] = "[".as_bytes();
+const RIGHT_SQUARE: &[u8] = "]".as_bytes();
+const COMMA: &[u8] = ",".as_bytes();
 const NULL: &[u8] = "null".as_bytes();
 const ZERO: &[u8] = "0".as_bytes();
 const MINUS: &[u8] = "-".as_bytes();
@@ -130,6 +133,25 @@ where
             out.write(INFINITY)?;
         }
     }
+    Ok(())
+}
+
+/// Given:
+/// i32: block
+/// i16: offset
+///
+/// Writes a two-element array representing the (block, offset) tuple.
+pub fn serialise_tid<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr>
+where
+    Out: Write,
+{
+    let block = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+    let offset = i16::from_be_bytes([bytes[4], bytes[5]]);
+    out.write(LEFT_SQUARE)?;
+    itoap::write(&mut *out, block)?;
+    out.write(COMMA)?;
+    itoap::write(&mut *out, offset)?;
+    out.write(RIGHT_SQUARE)?;
     Ok(())
 }
 

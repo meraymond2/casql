@@ -106,11 +106,14 @@ where
         Ser::Interval => time::serialise_duration(bytes, out),
         Ser::String => text::serialise_str(bytes, out),
         Ser::EWKB => todo!(),
-        Ser::Tid => todo!(),
+        Ser::Tid => nums::serialise_tid(bytes, out),
         Ser::Timestamp => time::serialise_datetime(bytes, out),
         Ser::TimeUnzoned => time::serialise_time_unzoned(bytes, out),
         Ser::TimeZoned => time::serialise_time_zoned(bytes, out),
-        Ser::Unknown => todo!(),
+        Ser::Unknown => {
+            out.write("???".as_bytes())?;
+            Ok(())
+        }
     }
 }
 
