@@ -37,6 +37,7 @@ where
         _ => unreachable!(),
     };
     // TODO: for now, just printing coords, add in the wrapper afterwards
+    // eprintln!("{:?}", bytes);
     out.write(LEFT_SQUARE)?;
     match bytes[1] {
         1 => {
@@ -45,6 +46,23 @@ where
         2 => {
             let line_length = rdr.i32();
             write_coords(&mut rdr, &[line_length, coord_size], out)?;
+        }
+        3 => {
+            // TODO: can I change write_coords to find the outer dimension length so I can use it
+            // for polygons?
+            let mut first = true;
+            let line_count = rdr.i32();
+            for _ in 0..line_count {
+                if first {
+                    first = false
+                } else {
+                    out.write(COMMA)?;
+                }
+                let line_length = rdr.i32();
+                out.write(LEFT_SQUARE)?;
+                write_coords(&mut rdr, &[line_length, coord_size], out)?;
+                out.write(RIGHT_SQUARE)?;
+            }
         }
         _ => {
             unimplemented!()
