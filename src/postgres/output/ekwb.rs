@@ -18,9 +18,9 @@ where
     let mut rdr = BinaryReader::from(bytes, order);
     // skip order (u8)
     rdr.skip(1);
-    let geom_type = rdr.i32();
+    let _geom_type = rdr.i32();
     // todo is it always the fifth byte?
-    let srid = if has_srid(bytes[4]) {
+    let _srid = if has_srid(bytes[4]) {
         Some(rdr.i32())
     } else {
         None
@@ -41,13 +41,24 @@ where
     out.write(LEFT_SQUARE)?;
     match bytes[1] {
         1 => {
+            // Point
             write_coords(&mut rdr, 1, coord_size, out)?;
         }
         2 => {
+            // Linestring
             write_coords(&mut rdr, 2, coord_size, out)?;
         }
         3 => {
+            // Polygon
             write_coords(&mut rdr, 3, coord_size, out)?;
+        }
+        4 => {
+            // Multipoint
+            write_collection_coords(&mut rdr, 1, coord_size, out)?;
+        }
+        5 => {
+            // Multilinestring
+            write_collection_coords(&mut rdr, 2, coord_size, out)?;
         }
         _ => {
             unimplemented!()
@@ -78,6 +89,37 @@ fn has_srid(flag: u8) -> bool {
         0xE0 => true,
         _ => unreachable!(),
     }
+}
+
+fn write_collection_coords<Out>(
+    bytes: &mut BinaryReader,
+    n_dims: i32,
+    coord_size: i32,
+    out: &mut Out,
+) -> Result<(), CasErr>
+where
+    Out: Write,
+{
+    let collection_size = bytes.i32();
+    let mut first = true;
+    for _ in 0..collection_size {
+        if first {
+            first = false;
+        } else {
+            out.write(COMMA)?;
+        }
+        // what is this and is it ever not one?
+        let _flag = bytes.u8();
+        // This is the geometry type and coordinate size for the elements within the collection,
+        // but it is derivable from the collection’s type, so rather than repeat that match
+        // statement, we ignore it here. I haven’t come across a case yet where you can mix
+        // coordinate-types, this assumption may change if that is possible.
+        let _coll_geom_type = bytes.i32();
+        out.write(LEFT_SQUARE)?;
+        write_coords(bytes, n_dims, coord_size, out)?;
+        out.write(RIGHT_SQUARE)?;
+    }
+    Ok(())
 }
 
 fn write_coords<Out>(
