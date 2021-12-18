@@ -5,10 +5,7 @@ const NULL: &[u8] = "null".as_bytes();
 const TRUE: &[u8] = "true".as_bytes();
 const FALSE: &[u8] = "false".as_bytes();
 
-// TODO: numbers
-
-// This is arguably a waste of cycles, but it bothers me that the whitespace for json is off, so
-// here we are.
+// For a JSON string of ~7500 characters, this adds ~20 microseconds compared to printing it raw.
 
 /// Given:
 /// u8[]: bytes representing UTF-8 characters of a JSON string
@@ -55,6 +52,13 @@ where
             // t
             out.write(TRUE)?;
             pos += 4;
+        } else if numericish(byte) {
+            let start = pos;
+            pos += 1;
+            while numericish(bytes[pos]) {
+                pos += 1;
+            }
+            out.write(&bytes[start..pos])?;
         } else {
             pos += 1;
         }
