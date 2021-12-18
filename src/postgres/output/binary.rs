@@ -56,3 +56,33 @@ where
     out.write(RIGHT_SQUARE)?;
     Ok(())
 }
+
+/// From https://datatracker.ietf.org/doc/html/rfc4122#section-4.1.2
+/// Given:
+/// u32: the low field of the timestamp
+/// u16: the middle field of the timestamp
+/// u16: the high field of the timestamp multiplexed with the version number
+/// u8: the high field of the clock sequence multiplexed with the variant
+/// u8: the low field of the clock sequence
+/// u48: the spatially unique node identifier
+///
+/// Writes:
+/// a lowercase UUID string
+pub fn serialise_uuid<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr>
+where
+    Out: Write,
+{
+    let mut uuid = BinaryReader::from(bytes, ByteOrder::BigEndian);
+    write!(
+        out,
+        "\"{:x}-{:x}-{:x}-{:x}{:x}-{:x}{:x}\"",
+        uuid.i32(),
+        uuid.i16(),
+        uuid.i16(),
+        uuid.u8(),
+        uuid.u8(),
+        uuid.i16(),
+        uuid.i32()
+    )?;
+    Ok(())
+}

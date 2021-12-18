@@ -1,6 +1,8 @@
 use crate::cas_err::CasErr;
 use std::io::Write;
 
+const ESCAPE: &[u8] = "\\".as_bytes();
+const FORWARD_SLASH: &[u8] = "\\".as_bytes();
 const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
 
 /// Given:
@@ -11,42 +13,50 @@ pub fn serialise_str<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr>
 where
     Out: Write,
 {
-    // I’m curious about the performance implications for building up a second string versus writing
-    // everything straight to the buffered writer. I assume the former is slower, but I’m not sure
-    // if the Result checking adds overhead. For the time being, I’m using a second string because
-    // I’m too lazy to figure out how to write a char directly, and at least there aren’t many
-    // allocations.
-    // Need to confirm to be completely sure, but it sounds like I can just check the ascii bytes
-    // I’m interested in, because they won’t overlap with UTF-8 code points, and then skips chars.
-    let s = std::str::from_utf8(bytes).expect("Strings must be valid UTF-8.");
-    let mut escaped = String::with_capacity(bytes.len());
-    for char in s.chars() {
-        match char {
-            '\\' => {
-                escaped.push('\\');
-                escaped.push('\\');
+    out.write(DOUBLE_QUOTE)?;
+    let mut pos = 0;
+    while pos < bytes.len() {
+        if is_escaped(bytes[pos]) {
+            match bytes[pos] {
+                1 => {}
+                9 => {
+                    out.write(ESCAPE)?;
+                    out.write("t".as_bytes())?;
+                }
+                10 => {
+                    out.write(ESCAPE)?;
+                    out.write("n".as_bytes())?;
+                }
+                13 => {
+                    out.write(ESCAPE)?;
+                    out.write("r".as_bytes())?;
+                }
+                34 => {
+                    out.write(ESCAPE)?;
+                    out.write(DOUBLE_QUOTE)?;
+                }
+                92 => {
+                    out.write(ESCAPE)?;
+                    out.write(FORWARD_SLASH)?;
+                }
+                _ => unreachable!(),
             }
-            '"' => {
-                escaped.push('\\');
-                escaped.push('"');
+            pos += 1;
+        } else {
+            let start = pos;
+            while pos < bytes.len() && !is_escaped(bytes[pos]) {
+                pos += 1;
             }
-            '\n' => {
-                escaped.push('\\');
-                escaped.push('n');
-            }
-            '\r' => {
-                escaped.push('\\');
-                escaped.push('r');
-            }
-            '\t' => {
-                escaped.push('\\');
-                escaped.push('t');
-            }
-            _ => escaped.push(char),
+            out.write(&bytes[start..pos])?;
         }
     }
     out.write(DOUBLE_QUOTE)?;
-    out.write(&escaped.as_bytes())?;
-    out.write(DOUBLE_QUOTE)?;
     Ok(())
+}
+
+/// Returns true if the byte is a character that should be escaped in the JSON string, i.e. it is a
+/// \t, \n, \r, " or \. Some string-like sequences in Postgres also start with a SOH char, which is
+/// stripped.
+fn is_escaped(byte: u8) -> bool {
+    byte == 1 || byte == 9 || byte == 10 || byte == 13 || byte == 34 || byte == 92
 }

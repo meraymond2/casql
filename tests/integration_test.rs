@@ -141,6 +141,28 @@ fn test_dates_and_times() -> Result<(), CasErr> {
     Ok(())
 }
 
+/*
+       json       |     jsonb      | jsonpath |       xml       |                 uuid
+------------------+----------------+----------+-----------------+--------------------------------------
+ { "cas": "cat" } | {"cas": "cat"} | $."cas"  | <div>html</div> | 27e31d5b-b544-44e0-83c1-379519b8a115
+*/
+#[test]
+fn test_structured_data() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query(
+        "SELECT * FROM structured_data".to_string(),
+        vec![],
+        &mut out,
+    )?;
+    let expected = format!(
+        "[{}]\n",
+        r#"{"json":{"cas":"cat"},"jsonb":{"cas":"cat"},"jsonpath":"$.\"cas\"","xml":"<div>html</div>","uuid":"27e31d5b-b544-44e0-83c1-379519b8a115"}"#,
+    );
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
+    Ok(())
+}
+
 fn connect() -> Result<Conn, CasErr> {
     let params = args::ConnectionParams {
         host: "localhost".to_string(),

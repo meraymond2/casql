@@ -90,8 +90,21 @@ VALUES ('4713-01-1 BC', '04:05:06.789', '4713-01-1 04:05:06.789 BC', '4713-01-1 
        ('5874897-12-31', '23:59:59.999999', '294276-12-31 23:59:59.999999', '294276-12-31 23:59:59.999999 z',
         '15 microseconds', '04:05:06.789Z');
 
-/*
 
+-- Structured Data --
+CREATE TABLE structured_data
+(
+    json     json,     -- 114: JSON stored as text
+    jsonb    jsonb,    -- 3802: Binary JSON
+    jsonpath jsonpath, -- 4072: JSON path
+    xml      xml,      -- 142: XML content
+    uuid     uuid      -- 2950: UUID datatype
+);
+
+INSERT INTO structured_data (json, jsonb, jsonpath, xml, uuid)
+VALUES ('{ "cas": "cat" }', '{  "cas": "cat" }', '$.cas', '<div>html</div>', '27e31d5b-b544-44e0-83c1-379519b8a115');
+
+/*
 -- Internal Ids --
 regproc regproc, -- 24: registered procedure
 oid oid, -- 26: object identifier(oid), maximum 4 billion
@@ -101,12 +114,7 @@ cid cid, -- 29: command identifier type, sequence in transaction id
 oidvector oidvector, -- 30: array of oids, used in system tables
 xid8 xid8, -- 5069: full transaction id
 
--- Structured Data --
-json json, -- 114: JSON stored as text
-xml xml, -- 142: XML content
-uuid uuid, -- 2950: UUID datatype
-jsonb jsonb, -- 3802: Binary JSON
-jsonpath jsonpath, -- 4072: JSON path
+
 
 -- Postgres Geometries --
 point point, -- 600: geometric point \'(x, y)\'

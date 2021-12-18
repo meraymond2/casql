@@ -115,6 +115,7 @@ where
             out.write("???".as_bytes())?;
             Ok(())
         }
+        Ser::Uuid => binary::serialise_uuid(bytes, out),
     }
 }
 

@@ -22,6 +22,7 @@ pub enum Ser {
     TimeUnzoned,
     TimeZoned,
     Unknown,
+    Uuid,
 }
 
 // https://github.com/postgres/postgres/blob/master/src/include/catalog/pg_type.dat
@@ -60,7 +61,9 @@ pub fn find_serialiser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Ser {
         1560 => Ser::BitString,   // bit
         1562 => Ser::BitString,   // varbit
         1700 => Ser::BigNum,      // numeric
+        2950 => Ser::Uuid,        // uuid
         3802 => Ser::Json,        // jsonb
+        4072 => Ser::String,      // jsonpath
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Ser::EWKB,
             _ => Ser::Unknown,
