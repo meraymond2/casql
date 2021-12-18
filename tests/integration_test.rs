@@ -172,14 +172,30 @@ fn test_structured_data() -> Result<(), CasErr> {
 fn test_shapes() -> Result<(), CasErr> {
     let mut conn = connect()?;
     let mut out = Vec::new();
-    conn.query(
-        "SELECT * FROM shapes".to_string(),
-        vec![],
-        &mut out,
-    )?;
+    conn.query("SELECT * FROM shapes".to_string(), vec![], &mut out)?;
     let expected = format!(
         "[{}]\n",
         r#"{"point":[2,4],"lseg":[[0,0],[2,4]],"path":[[0,0],[1,2],[2,4]],"box":[[2,2],[0,0]],"polygon":[[0,0],[2,2],[2,4],[0,0]],"line":"2x + 3y + 4 = 0","circle":[[0,0],10]}"#,
+    );
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
+    Ok(())
+}
+
+/*
+            cidr             |        macaddr8         |      macaddr      |            inet
+-----------------------------+-------------------------+-------------------+-----------------------------
+ 192.168.100.128/25          | 08:00:2b:01:02:03:04:05 | 08:00:2b:01:02:03 | 127.0.0.1
+ 2001:db8::8a2e:370:7334/128 |                         |                   | 2001:db8::8a2e:370:7334/120
+*/
+#[test]
+fn test_net() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query("SELECT * FROM networking".to_string(), vec![], &mut out)?;
+    let expected = format!(
+        "[{},{}]\n",
+        r#"{"cidr":"192.168.100.128/25","macaddr8":"08-00-2b-01-02-03-04-05","macaddr":"08-00-2b-01-02-03","inet":"127.0.0.1"}"#,
+        r#"{"cidr":"2001:db8:0:0:0:8a2e:370:7334/128","macaddr8":null,"macaddr":null,"inet":"2001:db8:0:0:0:8a2e:370:7334/120"}"#,
     );
     assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
     Ok(())

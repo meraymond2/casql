@@ -119,6 +119,19 @@ CREATE TABLE shapes
 INSERT INTO shapes (point, lseg, path, box, polygon, line, circle)
 VALUES ('(2, 4)', '((0,0),(2,4))', '((0,0),(1,2),(2,4))', '((0,0),(2,2))', '((0,0),(2,2),(2,4),(0,0))', '{2, 3, 4}', '<(0,0), 10>');
 
+-- Networking --
+CREATE TABLE networking
+(
+    cidr     cidr,     -- 650: network IP address/netmask, network address
+    macaddr8 macaddr8, -- 774: XX:XX:XX:XX:XX:XX:XX:XX, MAC address
+    macaddr  macaddr,  -- 829: XX:XX:XX:XX:XX:XX, MAC address
+    inet     inet      -- 869: IP address/netmask, host address, netmask optional
+);
+
+INSERT INTO networking
+VALUES ('192.168.100.128/25', '08-00-2b-01-02-03-04-05', '08-00-2b-01-02-03', '127.0.0.1'),
+       ('2001:db8::8a2e:370:7334/128', NULL, NULL, '2001:db8::8a2e:370:7334/120');
+
 /*
 -- Internal Ids --
 regproc regproc, -- 24: registered procedure
@@ -128,16 +141,6 @@ xid xid, -- 28: transaction id
 cid cid, -- 29: command identifier type, sequence in transaction id
 oidvector oidvector, -- 30: array of oids, used in system tables
 xid8 xid8, -- 5069: full transaction id
-
-
-
-
--- Networking --
-macaddr macaddr, -- 829: XX:XX:XX:XX:XX:XX, MAC address
-inet inet, -- 869: IP address/netmask, host address, netmask optional
-cidr cidr, -- 650: network IP address/netmask, network address
-macaddr8 macaddr8, -- 774: XX:XX:XX:XX:XX:XX:XX:XX, MAC address
-
 
 int2vector int2vector, -- 22: array of int2, used in system tables
 pg_type pg_type, -- 71:

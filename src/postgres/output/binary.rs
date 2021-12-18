@@ -75,7 +75,7 @@ where
     let mut uuid = BinaryReader::from(bytes, ByteOrder::BigEndian);
     write!(
         out,
-        "\"{:x}-{:x}-{:x}-{:x}{:x}-{:x}{:x}\"",
+        "\"{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:04x}{:08x}\"",
         uuid.i32(),
         uuid.i16(),
         uuid.i16(),

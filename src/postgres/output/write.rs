@@ -1,7 +1,7 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use crate::postgres::output::ser::{find_serialiser, Ser};
-use crate::postgres::output::{binary, ekwb, json, nums, shapes, text, time};
+use crate::postgres::output::{binary, ekwb, json, net, nums, shapes, text, time};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
@@ -103,6 +103,7 @@ where
         Ser::EWKB => ekwb::serialise_geom(bytes, out),
         Ser::Float32 => nums::serialise_f32(bytes, out),
         Ser::Float64 => nums::serialise_f64(bytes, out),
+        Ser::Inet => net::serialise_inet(bytes, out),
         Ser::Int16 => nums::serialise_i16(bytes, out),
         Ser::Int32 => nums::serialise_i32(bytes, out),
         Ser::Int64 => nums::serialise_i64(bytes, out),
@@ -110,6 +111,7 @@ where
         Ser::Json => json::serialise_json(bytes, out),
         Ser::Line => shapes::serialise_line(bytes, out),
         Ser::LineSegment => shapes::serialise_line_segment(bytes, out),
+        Ser::MacAddr => net::serialise_mac_addr(bytes, out),
         Ser::Path => shapes::serialise_path(bytes, out),
         Ser::Point => shapes::serialise_point(bytes, out),
         Ser::Polygon => shapes::serialise_polygon(bytes, out),

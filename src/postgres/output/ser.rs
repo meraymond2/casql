@@ -13,6 +13,7 @@ pub enum Ser {
     EWKB,
     Float32,
     Float64,
+    Inet,
     Int16,
     Int32,
     Int64,
@@ -20,6 +21,7 @@ pub enum Ser {
     Json,
     Line,
     LineSegment,
+    MacAddr,
     Path,
     Point,
     Polygon,
@@ -59,9 +61,13 @@ pub fn find_serialiser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Ser {
         603 => Ser::Box,          // box
         604 => Ser::Polygon,      // polygon
         628 => Ser::Line,         // line
+        650 => Ser::Inet,         // cidr
         718 => Ser::Circle,       // circle
         700 => Ser::Float32,      // float4
         701 => Ser::Float64,      // float8
+        774 => Ser::MacAddr,      // macaddr8
+        829 => Ser::MacAddr,      // macaddr
+        869 => Ser::Inet,         // inet
         1007 => Ser::Array,       // int4[]
         1042 => Ser::String,      // bpchar
         1043 => Ser::String,      // varchar

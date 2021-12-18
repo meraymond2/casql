@@ -2,7 +2,7 @@ use crate::cas_err::CasErr;
 use std::io::Write;
 
 const ESCAPE: &[u8] = "\\".as_bytes();
-const FORWARD_SLASH: &[u8] = "\\".as_bytes();
+const BACKSLASH: &[u8] = "\\".as_bytes();
 const DOUBLE_QUOTE: &[u8] = "\"".as_bytes();
 
 /// Given:
@@ -37,7 +37,7 @@ where
                 }
                 92 => {
                     out.write(ESCAPE)?;
-                    out.write(FORWARD_SLASH)?;
+                    out.write(BACKSLASH)?;
                 }
                 _ => unreachable!(),
             }

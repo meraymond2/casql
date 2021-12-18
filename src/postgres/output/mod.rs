@@ -1,6 +1,7 @@
 mod binary;
 mod ekwb;
 mod json;
+mod net;
 mod nums;
 mod ser;
 mod shapes;
