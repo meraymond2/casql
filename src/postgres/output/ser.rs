@@ -8,14 +8,15 @@ pub enum Ser {
     BitString,
     Bytes,
     Date,
+    EWKB,
     Float32,
     Float64,
     Int16,
     Int32,
     Int64,
     Interval,
+    Json,
     String,
-    EWKB,
     Tid,
     Timestamp,
     TimeUnzoned,
@@ -42,6 +43,8 @@ pub fn find_serialiser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Ser {
         28 => Ser::Int32,         // xid
         29 => Ser::Int32,         // cid
         30 => Ser::Array,         // oidvector
+        114 => Ser::Json,         // json
+        142 => Ser::String,       // xml
         194 => Ser::String,       // pg_node_tree (string representing an internal node tree)
         700 => Ser::Float32,      // float4
         701 => Ser::Float64,      // float8
@@ -57,6 +60,7 @@ pub fn find_serialiser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Ser {
         1560 => Ser::BitString,   // bit
         1562 => Ser::BitString,   // varbit
         1700 => Ser::BigNum,      // numeric
+        3802 => Ser::Json,        // jsonb
         _ => match dynamic_types.get(&oid).map(|typname| typname.as_str()) {
             Some("geometry") => Ser::EWKB,
             _ => Ser::Unknown,

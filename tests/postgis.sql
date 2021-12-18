@@ -1,3 +1,5 @@
+-- TODO: the postgis image doesn’t work if I pass in an init script. Maybe I just need to write a couple of bash scripts to start up the test images.
+
 -- Postgis Points --
 CREATE TABLE points
 (

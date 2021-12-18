@@ -16,6 +16,8 @@ where
     // if the Result checking adds overhead. For the time being, I’m using a second string because
     // I’m too lazy to figure out how to write a char directly, and at least there aren’t many
     // allocations.
+    // Need to confirm to be completely sure, but it sounds like I can just check the ascii bytes
+    // I’m interested in, because they won’t overlap with UTF-8 code points, and then skips chars.
     let s = std::str::from_utf8(bytes).expect("Strings must be valid UTF-8.");
     let mut escaped = String::with_capacity(bytes.len());
     for char in s.chars() {
