@@ -1,7 +1,7 @@
 use crate::binary_reader::{BinaryReader, ByteOrder};
 use crate::cas_err::CasErr;
 use crate::postgres::output::ser::{find_serialiser, Ser};
-use crate::postgres::output::{binary, ekwb, json, nums, text, time};
+use crate::postgres::output::{binary, ekwb, json, nums, shapes, text, time};
 use crate::postgres::row_iter::RowIter;
 use std::collections::HashMap;
 use std::io::Write;
@@ -96,7 +96,9 @@ where
         Ser::Bool => nums::serialise_bool(bytes, out),
         Ser::BigNum => nums::serialise_bignum(bytes, out),
         Ser::BitString => binary::serialise_bitstring(bytes, out),
+        Ser::Box => shapes::serialise_box(bytes, out),
         Ser::Bytes => binary::serialise_bytes(bytes, out),
+        Ser::Circle => shapes::serialise_circle(bytes, out),
         Ser::Date => time::serialise_date(bytes, out),
         Ser::EWKB => ekwb::serialise_geom(bytes, out),
         Ser::Float32 => nums::serialise_f32(bytes, out),
@@ -106,6 +108,11 @@ where
         Ser::Int64 => nums::serialise_i64(bytes, out),
         Ser::Interval => time::serialise_duration(bytes, out),
         Ser::Json => json::serialise_json(bytes, out),
+        Ser::Line => shapes::serialise_line(bytes, out),
+        Ser::LineSegment => shapes::serialise_line_segment(bytes, out),
+        Ser::Path => shapes::serialise_path(bytes, out),
+        Ser::Point => shapes::serialise_point(bytes, out),
+        Ser::Polygon => shapes::serialise_polygon(bytes, out),
         Ser::String => text::serialise_str(bytes, out),
         Ser::Tid => nums::serialise_tid(bytes, out),
         Ser::Timestamp => time::serialise_datetime(bytes, out),
@@ -136,9 +143,7 @@ where
         let _lower_bounds = array.i32();
     }
     let parser = find_serialiser(item_oid, &HashMap::new());
-    out.write(LEFT_SQUARE)?;
     write_array_elements(&mut array, &counts, &parser, out)?;
-    out.write(RIGHT_SQUARE)?;
     Ok(())
 }
 
@@ -153,6 +158,7 @@ where
 {
     if dimensions.len() == 1 {
         let mut first = true;
+        out.write(LEFT_SQUARE)?;
         for _ in 0..dimensions[0] {
             if first {
                 first = false
@@ -166,18 +172,19 @@ where
                 write_value(bytes.byte_slice(size as usize), serialiser, out)?;
             }
         }
+        out.write(RIGHT_SQUARE)?;
     } else {
         let mut first = true;
+        out.write(LEFT_SQUARE)?;
         for _ in 0..dimensions[0] {
             if first {
                 first = false
             } else {
                 out.write(COMMA)?;
             }
-            out.write(LEFT_SQUARE)?;
             write_array_elements(bytes, &dimensions[1..dimensions.len()], serialiser, out)?;
-            out.write(RIGHT_SQUARE)?;
         }
+        out.write(RIGHT_SQUARE)?;
     }
     Ok(())
 }

@@ -163,6 +163,28 @@ fn test_structured_data() -> Result<(), CasErr> {
     Ok(())
 }
 
+/*
+ point |     lseg      |        path         |     box     |          polygon          |  line   |   circle
+-------+---------------+---------------------+-------------+---------------------------+---------+------------
+ (2,4) | [(0,0),(2,4)] | ((0,0),(1,2),(2,4)) | (2,2),(0,0) | ((0,0),(2,2),(2,4),(0,0)) | {2,3,4} | <(0,0),10>
+*/
+#[test]
+fn test_shapes() -> Result<(), CasErr> {
+    let mut conn = connect()?;
+    let mut out = Vec::new();
+    conn.query(
+        "SELECT * FROM shapes".to_string(),
+        vec![],
+        &mut out,
+    )?;
+    let expected = format!(
+        "[{}]\n",
+        r#"{"point":[2,4],"lseg":[[0,0],[2,4]],"path":[[0,0],[1,2],[2,4]],"box":[[2,2],[0,0]],"polygon":[[0,0],[2,2],[2,4],[0,0]],"line":"2x + 3y + 4 = 0","circle":[[0,0],10]}"#,
+    );
+    assert_eq!(std::str::from_utf8(&out).unwrap(), expected);
+    Ok(())
+}
+
 fn connect() -> Result<Conn, CasErr> {
     let params = args::ConnectionParams {
         host: "localhost".to_string(),

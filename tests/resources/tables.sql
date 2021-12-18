@@ -104,6 +104,21 @@ CREATE TABLE structured_data
 INSERT INTO structured_data (json, jsonb, jsonpath, xml, uuid)
 VALUES ('{ "cas": "cat" }', '{  "cas": "cat" }', '$.cas', '<div>html</div>', '27e31d5b-b544-44e0-83c1-379519b8a115');
 
+-- Postgres Geometries --
+CREATE TABLE shapes
+(
+    point   point,   -- 600: geometric point \'(x, y)\'
+    lseg    lseg,    -- 601: geometric line segment \'(pt1,pt2)\'
+    path    path,    -- 602: geometric path \'(pt1,...)\'
+    box     box,     -- 603: geometric box \'(lower left,upper right)\'
+    polygon polygon, -- 604: geometric polygon \'(pt1,...)\'
+    line    line,    -- 628: geometric line
+    circle  circle   -- 718: geometric circle \'(center,radius)\'
+);
+
+INSERT INTO shapes (point, lseg, path, box, polygon, line, circle)
+VALUES ('(2, 4)', '((0,0),(2,4))', '((0,0),(1,2),(2,4))', '((0,0),(2,2))', '((0,0),(2,2),(2,4),(0,0))', '{2, 3, 4}', '<(0,0), 10>');
+
 /*
 -- Internal Ids --
 regproc regproc, -- 24: registered procedure
@@ -116,14 +131,6 @@ xid8 xid8, -- 5069: full transaction id
 
 
 
--- Postgres Geometries --
-point point, -- 600: geometric point \'(x, y)\'
-lseg lseg, -- 601: geometric line segment \'(pt1,pt2)\'
-path path, -- 602: geometric path \'(pt1,...)\'
-box box, -- 603: geometric box \'(lower left,upper right)\'
-polygon polygon, -- 604: geometric polygon \'(pt1,...)\'
-line line, -- 628: geometric line
-circle circle, -- 718: geometric circle \'(center,radius)\'
 
 -- Networking --
 macaddr macaddr, -- 829: XX:XX:XX:XX:XX:XX, MAC address

@@ -6,7 +6,9 @@ pub enum Ser {
     Bool,
     BigNum,
     BitString,
+    Box,
     Bytes,
+    Circle,
     Date,
     EWKB,
     Float32,
@@ -16,6 +18,11 @@ pub enum Ser {
     Int64,
     Interval,
     Json,
+    Line,
+    LineSegment,
+    Path,
+    Point,
+    Polygon,
     String,
     Tid,
     Timestamp,
@@ -46,7 +53,13 @@ pub fn find_serialiser(oid: i32, dynamic_types: &HashMap<i32, String>) -> Ser {
         30 => Ser::Array,         // oidvector
         114 => Ser::Json,         // json
         142 => Ser::String,       // xml
-        194 => Ser::String,       // pg_node_tree (string representing an internal node tree)
+        600 => Ser::Point,        // point
+        601 => Ser::LineSegment,  // lseg
+        602 => Ser::Path,         // path
+        603 => Ser::Box,          // box
+        604 => Ser::Polygon,      // polygon
+        628 => Ser::Line,         // line
+        718 => Ser::Circle,       // circle
         700 => Ser::Float32,      // float4
         701 => Ser::Float64,      // float8
         1007 => Ser::Array,       // int4[]
