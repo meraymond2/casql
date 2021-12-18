@@ -123,7 +123,6 @@ where
     let mut microseconds = i64::from_be_bytes([
         bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
     ]);
-    eprintln!("{}", microseconds);
     let us_per_day = 86400000000;
     let mut days = microseconds / us_per_day;
     microseconds -= days * us_per_day;
