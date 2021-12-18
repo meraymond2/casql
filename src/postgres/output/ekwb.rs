@@ -60,6 +60,15 @@ where
             // Multilinestring
             write_collection_coords(&mut rdr, 2, coord_size, out)?;
         }
+        6 => {
+            // Multipolygon
+            write_collection_coords(&mut rdr, 3, coord_size, out)?;
+        }
+        7 => {
+            // Geometry Collection {
+            eprintln!("{:?}", bytes);
+            write_collection_coords_alt(&mut rdr, out)?;
+        }
         _ => {
             unimplemented!()
         }
@@ -91,6 +100,56 @@ fn has_srid(flag: u8) -> bool {
     }
 }
 
+fn write_collection_coords_alt<Out>(
+    bytes: &mut BinaryReader,
+    out: &mut Out,
+) -> Result<(), CasErr>
+    where
+        Out: Write,
+{
+    let collection_size = bytes.i32();
+    eprintln!("coll size {}", collection_size);
+    let mut first = true;
+    for _ in 0..collection_size {
+        if first {
+            first = false;
+        } else {
+            out.write(COMMA)?;
+        }
+        // what is this and is it ever not one?
+        let _flag = bytes.u8();
+        eprintln!("flag {}", _flag);
+        // This is the geometry type and coordinate size for the elements within the collection,
+        // but it is derivable from the collection’s type, so rather than repeat that match
+        // statement, we ignore it here. I haven’t come across a case yet where you can mix
+        // coordinate-types, this assumption may change if that is possible.
+        let _coll_geom_type = bytes.i32();
+        eprintln!("ach {:?}", _coll_geom_type.to_le_bytes());
+        let n_dims = match _coll_geom_type.to_le_bytes()[0] {
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            4 => 1,
+            5 => 2,
+            6 => 3,
+            _ => unreachable!()
+        };
+        let coord_size = match _coll_geom_type.to_le_bytes()[3] {
+            0x00 => 2, // XY without SRID
+            0x20 => 2, // XY with SRID
+            0x40 => 3, // XYM without SRID
+            0x60 => 3, // XYM with SRID
+            0x80 => 3, // XYZ without SRID
+            0xA0 => 3, // XYZ with SRID
+            0xC0 => 4, // XYZM without SRID
+            0xE0 => 4, // XYZM with SRID
+            _ => unreachable!(),
+        };
+        write_coords(bytes, n_dims, coord_size, out)?;
+    }
+    Ok(())
+}
+
 fn write_collection_coords<Out>(
     bytes: &mut BinaryReader,
     n_dims: i32,
@@ -115,9 +174,7 @@ where
         // statement, we ignore it here. I haven’t come across a case yet where you can mix
         // coordinate-types, this assumption may change if that is possible.
         let _coll_geom_type = bytes.i32();
-        out.write(LEFT_SQUARE)?;
         write_coords(bytes, n_dims, coord_size, out)?;
-        out.write(RIGHT_SQUARE)?;
     }
     Ok(())
 }
@@ -133,6 +190,7 @@ where
 {
     if n_dims == 1 {
         let mut first = true;
+        out.write(LEFT_SQUARE)?;
         for _ in 0..point_n_dims {
             if first {
                 first = false
@@ -141,21 +199,22 @@ where
             }
             write!(out, "{}", bytes.f64())?;
         }
+        out.write(RIGHT_SQUARE)?;
     } else {
         let mut first = true;
         // Unlike Postgres arrays, the sub-dimensions can be different lengths, so each line within
         // a polygon begins with its own length.
         let len = bytes.i32();
+        out.write(LEFT_SQUARE)?;
         for _ in 0..len {
             if first {
                 first = false
             } else {
                 out.write(COMMA)?;
             }
-            out.write(LEFT_SQUARE)?;
             write_coords(bytes, n_dims - 1, point_n_dims, out)?;
-            out.write(RIGHT_SQUARE)?;
         }
+        out.write(RIGHT_SQUARE)?;
     }
     Ok(())
 }
