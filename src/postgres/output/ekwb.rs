@@ -15,7 +15,7 @@ const COMMA: &[u8] = ",".as_bytes();
 ///
 /// Writes:
 /// A Geojson object. If an SRID exists it will always be included, unlike ST_AsGeoJson, which skips
-/// it if it’s 4326.
+/// it if it’s 4326. Also, it includes M coordinates if present.
 ///
 pub fn serialise_geom<Out>(bytes: &[u8], out: &mut Out) -> Result<(), CasErr>
 where
@@ -99,6 +99,7 @@ where
 {
     let collection_size = rdr.i32();
     let mut first = true;
+    out.write(LEFT_SQUARE)?;
     for _ in 0..collection_size {
         if first {
             first = false;
@@ -113,6 +114,7 @@ where
         let n_dims = geom_type; // Point (1) -> 1, Line (2) -> 2, etc.
         write_coords(rdr, n_dims as i32, coord_size(coord_type), out)?;
     }
+    out.write(RIGHT_SQUARE)?;
     Ok(())
 }
 
