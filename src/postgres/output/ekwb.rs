@@ -42,34 +42,40 @@ where
     if let Some(srid) = srid {
         write!(out, "\"crs\":{{\"type\":\"name\",\"properties\":{{\"name\":\"EPSG:{}\"}}}},", srid)?;
     }
-    write!(out, "\"coordinates\":")?;
     match geom_type {
         1 => {
             // Point
+            write!(out, "\"coordinates\":")?;
             write_coords(&mut rdr, 1, coord_dims, out)?;
         }
         2 => {
             // Linestring
+            write!(out, "\"coordinates\":")?;
             write_coords(&mut rdr, 2, coord_dims, out)?;
         }
         3 => {
             // Polygon
+            write!(out, "\"coordinates\":")?;
             write_coords(&mut rdr, 3, coord_dims, out)?;
         }
         4 => {
             // Multipoint
-            write_collection(&mut rdr, out)?;
+            write!(out, "\"coordinates\":")?;
+            write_coords_array(&mut rdr, out)?;
         }
         5 => {
             // Multilinestring
-            write_collection(&mut rdr, out)?;
+            write!(out, "\"coordinates\":")?;
+            write_coords_array(&mut rdr, out)?;
         }
         6 => {
             // Multipolygon
-            write_collection(&mut rdr, out)?;
+            write!(out, "\"coordinates\":")?;
+            write_coords_array(&mut rdr, out)?;
         }
         7 => {
             // Geometry Collection {
+            write!(out, "\"geometries\":")?;
             write_collection(&mut rdr, out)?;
         }
         _ => {
@@ -93,7 +99,7 @@ fn geom_name(geom_type: u8) -> &'static str {
     }
 }
 
-fn write_collection<Out>(rdr: &mut BinaryReader, out: &mut Out) -> Result<(), CasErr>
+fn write_coords_array<Out>(rdr: &mut BinaryReader, out: &mut Out) -> Result<(), CasErr>
 where
     Out: Write,
 {
@@ -156,6 +162,13 @@ where
         out.write(RIGHT_SQUARE)?;
     }
     Ok(())
+}
+
+fn write_collection<Out>(rdr: &mut BinaryReader, out: &mut Out) -> Result<(), CasErr>
+    where
+        Out: Write,
+{
+   todo!()
 }
 
 fn has_srid(flag: u8) -> bool {
