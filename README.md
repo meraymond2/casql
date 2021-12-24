@@ -56,10 +56,19 @@ The Postgis support is in progress. Most GeoJSON types are done, but not every t
 #### Interface
 The CLI interface is clunky, and may be subject to change.
 
-### Local Testing
+## Local Testing
+To run the container for the integration test, start it from the root application directory. 
 ```bash
 docker run --rm --name pg-test-db -p 5432:5432 \
 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=cascat -e POSTGRES_DB=dbname \
 -v $(pwd)/tests/resources:/docker-entrypoint-initdb.d \
 postgres:13
 ```
+
+The Postgis tests aren’t automated yet. There is a separate postgis.sql file that for now is manually applied after the container is started.
+```bash
+docker run --rm --name pg-test-db -p 5432:5432 \
+  -e POSTGRES_USER=root -e POSTGRES_PASSWORD=cascat -e POSTGRES_DB=dbname  \
+  postgis/postgis:13-3.1-alpine
+```
+The Postgis container doesn’t appear to like the init scripts; I need to find a separate method to automate that container. 
