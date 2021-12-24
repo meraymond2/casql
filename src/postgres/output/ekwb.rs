@@ -164,7 +164,7 @@ where
     Ok(())
 }
 
-fn write_collection<Out>(rdr: &mut BinaryReader, out: &mut Out) -> Result<(), CasErr>
+fn write_collection<Out>(_bytes: &mut BinaryReader, _out: &mut Out) -> Result<(), CasErr>
     where
         Out: Write,
 {
